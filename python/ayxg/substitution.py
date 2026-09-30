@@ -24,7 +24,7 @@ def substitute_exprs(
             key = id(node)
             if key in memo:
                 continue
-            if node.op == "var" and node.name in replacements:
+            if node.op == "var" and node.name is not None and node.name in replacements:
                 result = replacements[node.name]
                 if result.sort != node.sort:
                     raise ArtifactError(

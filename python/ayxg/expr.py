@@ -6,7 +6,7 @@ Ayxg.QfAbv.Expr. Context membership is provided by ayxg.qfabv.QFAbvExpr.
 from __future__ import annotations
 from dataclasses import dataclass
 import re
-from typing import Any, Iterable, Mapping
+from typing import Any, Iterable, Mapping, cast
 
 class ArtifactError(ValueError):
     """An expression violates its structural typing contract."""
@@ -31,12 +31,12 @@ def _text(value: Any, field: str) -> str:
 def _object(value: Any, field: str) -> Mapping[str, Any]:
     if not isinstance(value, dict):
         raise ArtifactError(f"{field} must be an object")
-    return value
+    return cast(Mapping[str, Any], value)
 
 def _array(value: Any, field: str) -> list[Any]:
     if not isinstance(value, list):
         raise ArtifactError(f"{field} must be an array")
-    return value
+    return cast(list[Any], value)
 
 def _fields(value: Mapping[str, Any], expected: set[str], field: str) -> None:
     actual = set(value)
@@ -101,6 +101,16 @@ class TermSort:
             index_width=index_width,
             value_width=value_width,
         )
+
+    def require_bv_width(self) -> int:
+        if self.kind != "bv" or self.width is None:
+            raise ArtifactError("expected bit-vector sort")
+        return self.width
+
+    def require_array_widths(self) -> tuple[int, int]:
+        if self.kind != "array" or self.index_width is None or self.value_width is None:
+            raise ArtifactError("expected array sort")
+        return self.index_width, self.value_width
 
     def to_data(self) -> dict[str, Any]:
         if self.kind == "bool":
@@ -214,7 +224,7 @@ class TypedExpr:
                 self.sort.kind != "bv"
                 or type(self.value) is not int
                 or self.value < 0
-                or self.value >= (1 << self.sort.width)
+                or self.value >= (1 << self.sort.require_bv_width())
             ):
                 raise ArtifactError(
                     "bv_lit value must be canonical for its positive width"
@@ -225,7 +235,7 @@ class TypedExpr:
             self._require_arity(1)
             if (
                 self.sort.kind != "array"
-                or self.args[0].sort != TermSort.bv(self.sort.value_width)
+                or self.args[0].sort != TermSort.bv(self.sort.require_array_widths()[1])
             ):
                 raise ArtifactError("const_array value sort disagrees")
         elif self.op in _UNARY_OPS:
@@ -265,7 +275,7 @@ class TypedExpr:
                 or self.amount <= 0
                 or self.args[0].sort.kind != "bv"
                 or self.sort
-                != TermSort.bv(self.args[0].sort.width + self.amount)
+                != TermSort.bv(self.args[0].sort.require_bv_width() + self.amount)
             ):
                 raise ArtifactError(f"{self.op} widths disagree")
         elif self.op == "extract":
@@ -275,7 +285,7 @@ class TypedExpr:
                 type(self.hi) is not int
                 or type(self.lo) is not int
                 or self.args[0].sort.kind != "bv"
-                or not 0 <= self.lo <= self.hi < self.args[0].sort.width
+                or not 0 <= self.lo <= self.hi < self.args[0].sort.require_bv_width()
                 or self.sort != TermSort.bv(self.hi - self.lo + 1)
             ):
                 raise ArtifactError("extract bounds or result width disagree")
@@ -287,7 +297,7 @@ class TypedExpr:
                 or self.args[1].sort.kind != "bv"
                 or self.sort
                 != TermSort.bv(
-                    self.args[0].sort.width + self.args[1].sort.width
+                    self.args[0].sort.require_bv_width() + self.args[1].sort.require_bv_width()
                 )
             ):
                 raise ArtifactError("concat operand or result sorts disagree")
@@ -297,8 +307,8 @@ class TypedExpr:
             array_sort = self.args[0].sort
             if (
                 array_sort.kind != "array"
-                or self.args[1].sort != TermSort.bv(array_sort.index_width)
-                or self.sort != TermSort.bv(array_sort.value_width)
+                or self.args[1].sort != TermSort.bv(array_sort.require_array_widths()[0])
+                or self.sort != TermSort.bv(array_sort.require_array_widths()[1])
             ):
                 raise ArtifactError("select operand or result sorts disagree")
         elif self.op == "store":
@@ -307,8 +317,8 @@ class TypedExpr:
             if (
                 self.sort.kind != "array"
                 or self.args[0].sort != self.sort
-                or self.args[1].sort != TermSort.bv(self.sort.index_width)
-                or self.args[2].sort != TermSort.bv(self.sort.value_width)
+                or self.args[1].sort != TermSort.bv(self.sort.require_array_widths()[0])
+                or self.args[2].sort != TermSort.bv(self.sort.require_array_widths()[1])
             ):
                 raise ArtifactError("store operand or result sorts disagree")
         elif self.op in _BV_CMP_OPS:
@@ -409,7 +419,7 @@ class TypedExpr:
     def select(cls, array: TypedExpr, index: TypedExpr) -> TypedExpr:
         return cls(
             "select",
-            TermSort.bv(array.sort.value_width),
+            TermSort.bv(array.sort.require_array_widths()[1]),
             (array, index),
         )
 
@@ -427,7 +437,7 @@ class TypedExpr:
     def sign_extend(cls, expression: TypedExpr, amount: int) -> TypedExpr:
         return cls(
             "sign_extend",
-            TermSort.bv(expression.sort.width + amount),
+            TermSort.bv(expression.sort.require_bv_width() + amount),
             (expression,),
             amount=amount,
         )
@@ -439,7 +449,7 @@ class TypedExpr:
         for expression in items:
             result = cls(
                 "concat",
-                TermSort.bv(result.sort.width + expression.sort.width),
+                TermSort.bv(result.sort.require_bv_width() + expression.sort.require_bv_width()),
                 (result, expression),
             )
         return result
@@ -539,7 +549,7 @@ def variable_sorts(expressions: Iterable[TypedExpr]) -> dict[str, TermSort]:
             continue
         visited.add(identity)
         if expression.op == "var":
-            prior = result.setdefault(expression.name, expression.sort)
+            prior = result.setdefault(_identifier(expression.name, "expression.name"), expression.sort)
             if prior != expression.sort:
                 raise ArtifactError(
                     f"inconsistent sort for {expression.name}: "

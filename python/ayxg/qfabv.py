@@ -10,7 +10,7 @@ from typing import Generic, TypeAlias, TypeVar
 from .expr import BOOL, Declaration, TermSort, TypedExpr, variable_sorts
 from .substitution import substitute_exprs
 from .sts import STS
-from .segments import Adapter, ControlView, Segment
+from .segments import Adapter, Segment
 
 C = TypeVar("C")
 D = TypeVar("D")
@@ -134,7 +134,7 @@ class QFAbvStep(Generic[C, D]):
     @classmethod
     def identity(cls, context: QFAbvContext[C]) -> QFAbvStep[C, C]:
         return QFAbvStep(QFAbvExpr(context, BoolSort(), TypedExpr.bool_lit(True)),
-                         QFAbvUpdate.identity(context))
+                         QFAbvUpdate[C, C].identity(context))
 
     def compose(self, right: QFAbvStep[D, E]) -> QFAbvStep[C, E]:
         update = self.update.compose(right.update)
