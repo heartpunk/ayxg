@@ -1,0 +1,7 @@
+module(name = "ayxg", version = "0.1.0")
+
+bazel_dep(name = "rules_python", version = "1.7.0")
+
+python = use_extension("@rules_python//python/extensions:python.bzl", "python")
+python.defaults(python_version = "3.12")
+python.toolchain(python_version = "3.12")

@@ -1,0 +1,15 @@
+load("@rules_python//python:defs.bzl", "py_library")
+
+package(default_visibility = ["//visibility:public"])
+
+py_library(
+    name = "ayxg",
+    srcs = glob(["python/ayxg/*.py"]),
+    data = ["python/ayxg/py.typed"],
+    imports = ["python"],
+)
+
+filegroup(
+    name = "lean_sources",
+    srcs = glob(["Ayxg/**/*.lean"]) + ["Ayxg.lean", "lakefile.lean", "lean-toolchain"],
+)
