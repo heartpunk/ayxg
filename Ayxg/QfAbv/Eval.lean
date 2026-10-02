@@ -34,14 +34,16 @@ namespace Eval
   | .add => a + b
   | .sub => a - b
   | .mul => a * b
-  | .udiv => a / b
+  | .udiv => BitVec.smtUDiv a b
   | .urem => a % b
   | .and => a &&& b
   | .or => a ||| b
   | .xor => a ^^^ b
-  | .shl => a <<< b
-  | .lshr => a >>> b
-  | .ashr => BitVec.sshiftRight' a b
+  | .shl => if b.toNat < w then a <<< b else 0
+  | .lshr => if b.toNat < w then a >>> b else 0
+  | .ashr =>
+      if b.toNat < w then BitVec.sshiftRight' a b
+      else if a.msb then BitVec.allOnes w else 0
 
 @[inline] def memLoad {iw vw : Nat} (m : Mem iw vw) (addr : BitVec iw) : BitVec vw :=
   m addr
