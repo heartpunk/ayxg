@@ -2,9 +2,9 @@
 from hypothesis import given, strategies as st
 
 from ayxg import (
-    BoolSort, Declaration, QFAbvContext, QFAbvExpr, QFAbvStep, QFAbvUpdate,
-    QFAbvValuation, TermSort, TypedExpr, equal_valuations, eval_expr,
-    eval_step, eval_update,
+    ArraySort, BoolSort, Declaration, QFAbvArrayValue, QFAbvContext,
+    QFAbvExpr, QFAbvStep, QFAbvUpdate, QFAbvValuation, TermSort,
+    TypedExpr, equal_valuations, eval_expr, eval_step, eval_update,
 )
 from ayxg.qfabv import BVSort
 
@@ -102,3 +102,22 @@ def test_guarded_step_composition_is_associative(case):
     left_result, right_result = eval_step(left, state), eval_step(right, state)
     assert left_result is not None and right_result is not None
     assert equal_valuations(left_result, right_result)
+
+
+@given(st.integers(1, 4), st.integers(1, 8), st.integers(0, 255))
+def test_array_state_equality_is_extensional_across_canonical_encodings(iw, vw, seed):
+    domain = 1 << iw
+    index = seed % domain
+    low, high = 0, 1 % (1 << vw)
+    sort = ArraySort(iw, vw)
+    sparse = QFAbvArrayValue(sort, low, ((index, high),))
+    alternate = QFAbvArrayValue(sort, high,
+                                tuple((i, low) for i in range(domain) if i != index))
+    context = QFAbvContext((Declaration("memory", sort.encode()),))
+    left = QFAbvValuation(context, (sparse,))
+    right = QFAbvValuation(context, (alternate,))
+    assert equal_valuations(left, left)
+    assert equal_valuations(left, right)
+    assert equal_valuations(right, left)
+    different = QFAbvValuation(context, (QFAbvArrayValue(sort, low),))
+    assert not equal_valuations(left, different)

@@ -1,4 +1,5 @@
 import Ayxg.STS
+import Ayxg.QfAbv.STS
 import Ayxg.QfAbv.Subst
 import Ayxg.LTS.QfAbv.SymbolicTransitionSystem
 
@@ -132,6 +133,76 @@ example : ¬ (exampleSegment.denotes (fun _ _ _ => False) bodyRel exitRel 4 4) :
   intro h
   rcases h with ⟨first, _, hentry, _, _⟩
   exact hentry
+example : ¬ (exampleSegment.denotes entryRel bodyRel (fun _ _ _ => False) 4 4) := by
+  intro h
+  rcases h with ⟨_, _, _, _, ⟨exit, _, hExit⟩⟩
+  exact hExit
+
+/- The generic hierarchy accepts empty, chain, diamond, shared-child and
+   multiple-root layouts while its proposition rejects bad order and keys. -/
+def dagEmpty : SegmentDAG Nat String where
+  nodes := []
+  roots := []
+  ordered := by simp [SegmentNode.Ordered]
+  rootsPresent := by intro root h; simp at h
+
+def dagLeaf : SegmentDAG Nat String where
+  nodes := [⟨0, "leaf", []⟩]
+  roots := [0]
+  ordered := by simp [SegmentNode.Ordered]
+  rootsPresent := by
+    intro root h
+    simp at h
+    subst root
+    exact ⟨⟨0, "leaf", []⟩, by simp, rfl⟩
+
+def dagChain : SegmentDAG Nat String where
+  nodes := [⟨0, "leaf", []⟩, ⟨1, "middle", [0]⟩, ⟨2, "root", [1]⟩]
+  roots := [2]
+  ordered := by simp [SegmentNode.Ordered]
+  rootsPresent := by
+    intro root h
+    simp at h
+    subst root
+    exact ⟨⟨2, "root", [1]⟩, by simp, rfl⟩
+
+def dagDiamond : SegmentDAG Nat String where
+  nodes := [⟨0, "left", []⟩, ⟨1, "right", []⟩, ⟨2, "join", [0, 1]⟩]
+  roots := [2]
+  ordered := by simp [SegmentNode.Ordered]
+  rootsPresent := by
+    intro root h
+    simp at h
+    subst root
+    exact ⟨⟨2, "join", [0, 1]⟩, by simp, rfl⟩
+
+def dagShared : SegmentDAG Nat String where
+  nodes := [⟨0, "shared", []⟩, ⟨1, "parent-a", [0]⟩,
+            ⟨2, "parent-b", [0]⟩]
+  roots := [1, 2]
+  ordered := by simp [SegmentNode.Ordered]
+  rootsPresent := by
+    intro root h
+    simp at h
+    rcases h with rfl | rfl
+    · exact ⟨⟨1, "parent-a", [0]⟩, by simp, rfl⟩
+    · exact ⟨⟨2, "parent-b", [0]⟩, by simp, rfl⟩
+
+example : dagEmpty.nodes = [] := rfl
+example : dagLeaf.nodes = [⟨0, "leaf", []⟩] := rfl
+example : dagChain.nodes = [⟨0, "leaf", []⟩, ⟨1, "middle", [0]⟩,
+                             ⟨2, "root", [1]⟩] := rfl
+example : dagDiamond.nodes = [⟨0, "left", []⟩, ⟨1, "right", []⟩,
+                               ⟨2, "join", [0, 1]⟩] := rfl
+example : dagShared.roots = [1, 2] ∧ dagShared.nodes.map SegmentNode.segment =
+    ["shared", "parent-a", "parent-b"] := by simp [dagShared]
+example : ¬ SegmentNode.Ordered []
+    [⟨0, "forward", [1]⟩, ⟨1, "child", []⟩] := by simp [SegmentNode.Ordered]
+example : ¬ SegmentNode.Ordered [] [⟨0, "first", []⟩, ⟨0, "duplicate", []⟩] := by
+  simp [SegmentNode.Ordered]
+example : ¬ SegmentNode.Ordered [] [⟨0, "missing", [9]⟩] := by simp [SegmentNode.Ordered]
+example : ¬ (∀ root ∈ [9], ∃ node ∈ dagChain.nodes, node.key = root) := by
+  simp [dagChain]
 
 /- Directly instantiate the symbolic-label composition and legacy control/run bridges. -/
 def identityLabel : SymbolicLabel ctx := SymbolicLabel.identity ctx
@@ -139,6 +210,15 @@ example : (identityLabel.compose identityLabel).denotes env env := by
   apply (SymbolicLabel.compose_denotes_iff identityLabel identityLabel env env).2
   exact ⟨env, (SymbolicLabel.identity_denotes_iff env env).2 rfl,
     (SymbolicLabel.identity_denotes_iff env env).2 rfl⟩
+
+def controlView : QFAbvControlView ctx (.bv 8) := ⟨.var .here⟩
+example : controlView.observe env = 3 := rfl
+
+def qfModel : QFAbvSTS ctx := ⟨[QFAbvStep.identity ctx]⟩
+example : qfModel.toSTS.steps = [QFAbvStep.identity ctx] := rfl
+example : qfModel.toLTS.Tr env (QFAbvStep.identity ctx) env := by
+  exact ⟨by simp [qfModel, QFAbvSTS.toSTS],
+    (QFAbvStep.identity_denotes_iff env env).2 rfl⟩
 
 def sourceConfig : LTS.QfAbv.Config Nat ctx := ⟨0, env⟩
 def targetConfig : LTS.QfAbv.Config Nat ctx := ⟨1, env⟩

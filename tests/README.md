@@ -95,13 +95,19 @@ PYTHONPATH=python python -m pytest -p no:cacheprovider tests/unit
 ```
 
 The unit suite checks sort/expression serialization and rejection contracts,
-array/value/context validation, extensional equality, STS label membership,
-control projection, and DAG shapes. Hypothesis properties cover simultaneous
-swap, substitution, update identity/composition/associativity, and guarded step
-composition.
+every admitted operator, public constructor helpers, array/value/context
+validation, extensional equality, evaluator context checks, update/step
+validation, STS label membership, and control projections. Hypothesis
+properties cover simultaneous swap and substitution, update identity,
+composition and associativity, guarded step composition, and extensional array
+state equality across alternate finite-support encodings. Explicit differential
+cases include empty contexts, heterogeneous contexts, and guards evaluated
+after the preceding update.
 
 `tests/lean_bridge/Bridge/Examples.lean` is compiled with the existing FFI
 bridge build. It exercises parallel-let shadowing, renaming, substitution,
-symbolic-label composition, direct segment denotation, and small concrete LTS
-runs/traces (empty, one-step, concatenated, branching, cyclic, label-sensitive,
-and dead-end cases), including the legacy symbolic-system-to-LTS trace bridge.
+symbolic-label composition, QF_ABV STS/control views, and direct segment
+denotation. It also constructs generic STS/LTS runs (empty, one-step,
+concatenated, branching, cyclic, label-sensitive, and dead-end cases), accepted
+segment-DAG shapes and rejected order/key cases, plus a concrete legacy
+symbolic-system run converted to an LTS trace.

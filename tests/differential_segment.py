@@ -39,6 +39,7 @@ class Case:
     segment: Segment
     state: QFAbvValuation
     fuel: int
+    target_context: QFAbvContext | None = None
 
     def request(self):
         entry = self.segment.input.label
@@ -52,6 +53,8 @@ class Case:
 
     @property
     def output_context(self):
+        if self.target_context is not None:
+            return self.target_context
         body = self.segment.input.label.update.target
         return QFAbvContext(tuple(Declaration("out_"+d.name,d.sort) for d in reversed(body.declarations)))
 
@@ -156,6 +159,29 @@ def explicit_cases():
         QFAbvUpdate(body,body,(wrap(body,TypedExpr.binary("bv_add",x,TypedExpr.bv_lit(8,1))),)))
     yield Case(Segment(Adapter(entry),STS((loop,)),(Adapter(exit),)),QFAbvValuation(source,(9,)),3), output_set(
         [[{"kind":"bv","value":n}] for n in [9,10,11,12]])
+    # A genuinely heterogeneous interface: two input fields, three body
+    # fields (including an array), and one renamed output field.
+    source2 = QFAbvContext((Declaration("src_pc",bv),Declaration("src_flag",TermSort.bool())))
+    body2 = QFAbvContext((Declaration("pc",bv),Declaration("flag",TermSort.bool()),
+                          Declaration("mem",TermSort.array(2,8))))
+    target2 = QFAbvContext((Declaration("dst_pc",bv),))
+    initial_memory = TypedExpr("const_array",TermSort.array(2,8),(TypedExpr.bv_lit(8,0),))
+    entry_rhs = (
+        wrap(source2,TypedExpr.var("src_pc",bv)),
+        wrap(source2,TypedExpr.var("src_flag",TermSort.bool())),
+        wrap(source2,initial_memory))
+    entry2 = QFAbvStep(wrap(source2,TypedExpr.bool_lit(True)),
+        QFAbvUpdate(source2,body2,entry_rhs))
+    pc = TypedExpr.var("pc",bv)
+    advance2 = QFAbvStep(wrap(body2,TypedExpr.bool_lit(True)),QFAbvUpdate(body2,body2,(
+        wrap(body2,TypedExpr.binary("bv_add",pc,TypedExpr.bv_lit(8,1))),
+        wrap(body2,TypedExpr.var("flag",TermSort.bool())),
+        wrap(body2,TypedExpr.var("mem",TermSort.array(2,8))))))
+    exit2 = QFAbvStep(wrap(body2,TypedExpr.bool_lit(True)),QFAbvUpdate(body2,target2,
+        (wrap(body2,pc),)))
+    yield Case(Segment(Adapter(entry2),STS((advance2,)),(Adapter(exit2),)),
+        QFAbvValuation(source2,(5,True)),1,target2), output_set([
+            [{"kind":"bv","value":5}], [{"kind":"bv","value":6}]])
 
 
 def main():
