@@ -65,7 +65,7 @@ class TestSortAndExpressionContracts:
         with pytest.raises(ArtifactError):
             ctx.check_expression(conflicting)
 
-    def test_every_operator_roundtrips(self):
+    def test_every_operator_roundtrips_and_has_an_expected_result(self):
         b, w, iw = TermSort.bool(), TermSort.bv(4), TermSort.bv(2)
         a = TermSort.array(2, 4)
         x, y = TypedExpr.var("x", w), TypedExpr.var("y", w)
@@ -78,25 +78,50 @@ class TestSortAndExpressionContracts:
             TypedExpr.negate(p), TypedExpr.binary("bool_and", p, TypedExpr.bool_lit(False)),
             TypedExpr.binary("bool_or", p, TypedExpr.bool_lit(False)),
             TypedExpr.ite(p, m, TypedExpr("const_array", a, (c,))),
-            TypedExpr.equal(x, y), TypedExpr.unary("bv_not", x),
+            TypedExpr.equal(x, y), TypedExpr.equal(p, TypedExpr.bool_lit(False)),
+            TypedExpr.unary("bv_not", x),
             *(TypedExpr.binary(op, x, y) for op in [
                 "bv_add", "bv_sub", "bv_mul", "bv_udiv", "bv_urem", "bv_and",
                 "bv_or", "bv_xor", "bv_shl", "bv_lshr", "bv_ashr",
                 "bv_ult", "bv_ule", "bv_slt", "bv_sle"]),
             TypedExpr.sign_extend(x, 2), TypedExpr("zero_extend", TermSort.bv(6), (x,), amount=2),
+            TypedExpr.sign_extend(TypedExpr.bv_lit(4, 13), 2),
             TypedExpr.extract(x, 2, 1), TypedExpr("concat", TermSort.bv(8), (x, x)),
-            TypedExpr.select(m, i), TypedExpr("store", a, (m, i, c)),
+            TypedExpr.select(m, i), TypedExpr.select(m, TypedExpr.bv_lit(2, 1)),
+            TypedExpr("store", a, (m, i, c)),
         ]
         context = QFAbvContext((Declaration("x", w), Declaration("y", w),
                                 Declaration("p", b), Declaration("i", iw),
                                 Declaration("m", a)))
         values = (5, 7, True, 2, QFAbvArrayValue(ArraySort(2, 4), 0, ((1, 3),)))
         state = QFAbvValuation(context, values)
-        for node in expressions:
+        expected = [
+            True, True, 3, QFAbvArrayValue(ArraySort(2, 4), 3), False, False,
+            True, state.values[4], False, False, 10, 12, 14, 3, 0, 5, 5, 7,
+            2, 0, 0, 0, True, True, True, True, 5, 5, 61, 2, 0x55, 0, 3,
+            QFAbvArrayValue(ArraySort(2, 4), 0, ((1, 3), (2, 3))),
+        ]
+        assert len(expressions) == 34
+        for node, result in zip(expressions, expected, strict=True):
             assert TypedExpr.from_data(node.to_data()) == node
             before = eval_expr(expr(context, node), state)
             after = eval_expr(expr(context, TypedExpr.from_data(node.to_data())), state)
-            assert before == after
+            assert before == after == result, node
+
+    def test_smt_bitvector_edge_results(self):
+        ctx = QFAbvContext(())
+        state = QFAbvValuation(ctx, ())
+        def evaluate(node):
+            return eval_expr(expr(ctx, node), state)
+        x, zero = TypedExpr.bv_lit(4, 13), TypedExpr.bv_lit(4, 0)
+        for op in ["bv_udiv", "bv_urem"]:
+            assert evaluate(TypedExpr.binary(op, x, zero)) == (15 if op == "bv_udiv" else 13)
+        oversized = TypedExpr.bv_lit(4, 4)
+        assert evaluate(TypedExpr.binary("bv_shl", x, oversized)) == 0
+        assert evaluate(TypedExpr.binary("bv_lshr", x, oversized)) == 0
+        assert evaluate(TypedExpr.binary("bv_ashr", x, oversized)) == 15
+        assert evaluate(TypedExpr.binary("bv_add", TypedExpr.bv_lit(4, 15),
+                                         TypedExpr.bv_lit(4, 1))) == 0
 
     def test_expression_deserialization_rejects_missing_extra_and_malformed_data(self):
         valid = TypedExpr.bv_lit(4, 3).to_data()

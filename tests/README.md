@@ -95,14 +95,15 @@ PYTHONPATH=python python -m pytest -p no:cacheprovider tests/unit
 ```
 
 The unit suite checks sort/expression serialization and rejection contracts,
-every admitted operator, public constructor helpers, array/value/context
-validation, extensional equality, evaluator context checks, update/step
-validation, STS label membership, and control projections. Hypothesis
-properties cover simultaneous swap and substitution, update identity,
-composition and associativity, guarded step composition, and extensional array
-state equality across alternate finite-support encodings. Explicit differential
-cases include empty contexts, heterogeneous contexts, and guards evaluated
-after the preceding update.
+every admitted operator with an explicit expected evaluation, public constructor
+helpers, and SMT-defined divide-by-zero, overshift, sign-extension, and modular
+arithmetic edges. It also checks array/value/context validation, extensional
+equality, evaluator context checks, update/step validation, STS label
+membership, and control projections. Hypothesis properties cover simultaneous
+swap and substitution, update identity, composition and associativity, guarded
+step composition, and extensional array state equality across alternate
+finite-support encodings. Explicit differential cases include empty contexts,
+heterogeneous contexts, and guards evaluated after the preceding update.
 
 `tests/lean_bridge/Bridge/Examples.lean` is compiled with the existing FFI
 bridge build. It exercises parallel-let shadowing, renaming, substitution,
