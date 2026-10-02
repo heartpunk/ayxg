@@ -201,8 +201,10 @@ def check(case, oracle, artifacts, lane, counts, coverage, expected=None):
     counts[lane] += 1
     coverage["enabled_left" if python["step"] is not None else "disabled_left"] += 1
     coverage["enabled_composition" if python["composed"] is not None else "disabled_composition"] += 1
-    if has_variable(case.left.guard.node) or has_variable(case.right.guard.node):
-        coverage["state_dependent_guard_cases"] += 1
+    if has_variable(case.left.guard.node):
+        coverage["state_guard_true" if python["step"] is not None else "state_guard_false"] += 1
+    if python["step"] is not None and has_variable(case.right.guard.node):
+        coverage["state_guard_true" if python["composed"] is not None else "state_guard_false"] += 1
     if python["step"] is not None and python["composed"] is None:
         coverage["disabled_right_after_enabled_left"] += 1
     contexts = [case.state.context, case.left.update.target, case.right.update.target]

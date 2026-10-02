@@ -84,7 +84,8 @@ referencing the same child and compares child-reference output sets to direct
 use. Containment edges do not execute parent or child segments in sequence.
 Failing requests and results are saved while Hypothesis shrinks; `summary.json`
 records each bound, empty/nonempty and multiple output sets, distinct exits,
-branching bodies, arrays, and cases whose guards inspect state variables.
+branching bodies, arrays, and true/false outcomes of state-dependent guard
+evaluations.
 
 
 ## Basic Python contract suite
@@ -105,7 +106,7 @@ swap and substitution, update identity, composition and associativity, guarded
 step composition, and extensional array state equality across alternate
 finite-support encodings. Explicit differential cases include empty contexts,
 heterogeneous contexts, guards evaluated after the preceding update, and the
-number of cases with state-dependent guards.
+true/false outcomes of state-dependent guard evaluations.
 
 `tests/lean_bridge/Bridge/Examples.lean` is compiled with the existing FFI
 bridge build. It exercises parallel-let shadowing, renaming, substitution,

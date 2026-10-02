@@ -29,18 +29,29 @@ def has_variable(node):
     return False
 
 
-def explore(segment,state,fuel):
+def explore(segment,state,fuel,coverage=None):
+    def record(guard,enabled):
+        if coverage is not None and has_variable(guard.node):
+            coverage["state_guard_true" if enabled else "state_guard_false"] += 1
     first = eval_step(segment.input.label,state)
+    record(segment.input.label.guard,first is not None)
     frontier = [] if first is None else [first]
     outputs = []
     for _ in range(fuel+1):
         for state in frontier:
             for exit in segment.exits:
                 result = eval_step(exit.label,state)
+                record(exit.label.guard,result is not None)
                 if result is not None:
                     outputs.append(state_result(result))
-        frontier = [result for state in frontier for step in segment.body.steps
-                    if (result := eval_step(step,state)) is not None]
+        next_frontier = []
+        for state in frontier:
+            for step in segment.body.steps:
+                result = eval_step(step,state)
+                record(step.guard,result is not None)
+                if result is not None:
+                    next_frontier.append(result)
+        frontier = next_frontier
     return outputs
 
 
@@ -105,7 +116,7 @@ def cases(draw,fuel,lane):
 def check(case,oracle,artifacts,lane,counts,coverage,known=None):
     request = case.request()
     (artifacts / "last-segment-request.json").write_text(json.dumps(request))
-    direct = output_set(explore(case.segment,case.state,case.fuel))
+    direct = output_set(explore(case.segment,case.state,case.fuel,coverage))
     dag = SegmentDAG((SegmentNode(0,case.segment),SegmentNode(1,case.segment,(0,)),
                       SegmentNode(2,case.segment,(0,))),(1,2))
     by_key = {node.key:node for node in dag.nodes}
@@ -121,11 +132,6 @@ def check(case,oracle,artifacts,lane,counts,coverage,known=None):
         coverage["enabled_outputs"] += 1
     if len(case.segment.body.steps) > 1:
         coverage["branching_bodies"] += 1
-    guards = [case.segment.input.label.guard.node,
-              *(step.guard.node for step in case.segment.body.steps),
-              *(exit.label.guard.node for exit in case.segment.exits)]
-    if any(has_variable(guard) for guard in guards):
-        coverage["state_dependent_guard_cases"] += 1
     if any(d.sort.kind == "array" for d in case.state.context.declarations):
         coverage["arrays"] += 1
     if not case.segment.exits:
