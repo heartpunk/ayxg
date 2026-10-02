@@ -62,3 +62,21 @@ store/read aliasing through reordered/renamed contexts. The summary records
 actual case counts, observed operator/context/guard coverage, and failures.
 Failing requests/results are saved while Hypothesis shrinks; its database
 retains failing examples. Production sources are unchanged by this campaign.
+
+## Bounded segments and shared references
+
+After rebuilding the same bridge, run `tests/differential_segment.py` with
+`--bridge-project`, `--examples`, and `--artifacts` as above. It compares output
+sets for input adapter → 0..3 body transitions → any enabled exit adapter.
+Both sides construct the actual segment datatypes and use their existing
+primitive evaluators; the exploration loops are test-only. This is not a proof
+of completeness for unbounded `Segment.denotes`.
+
+The generated cases cover array states, heterogeneous adapter contexts, two
+body branches, zero or multiple exits, enabled and disabled input/output guards,
+and every bound 0..3 separately. Explicit +1/+2 branching cases assert exact
+output sets at each bound, independently of the cross-language comparison.
+Each language also constructs a segment DAG with two parents referencing the
+same child and compares child-reference output sets to direct use. Containment
+edges do not execute parent or child segments in sequence. Failing requests and
+results are saved while Hypothesis shrinks; observed coverage is in summary.json.

@@ -155,7 +155,54 @@ def transitionRequest (j : Json) : Except String Json := do
     ("identity_left", ← runStep ((QFAbvStep.identity Γ).compose left) env),
     ("identity_right", ← runStep (left.compose (QFAbvStep.identity Δ)) env)]
 
+def segmentOutputs {Γ Δ Ω : Ctx} (segment : QFAbvSegment Γ Δ Ω)
+    (env : Env Γ) (fuel : Nat) : Except String (List Json) := do
+  let entry := segment.input.label
+  if !Eval.evalBool env entry.guard then return []
+  let mut frontier := [entry.update.eval env]
+  let mut outputs := []
+  for _ in List.range (fuel + 1) do
+    for state in frontier do
+      for exit in segment.exits do
+        if Eval.evalBool state exit.label.guard then
+          outputs := toJson (← envResult (exit.label.update.eval state)) :: outputs
+    frontier := frontier.flatMap fun state => segment.body.steps.filterMap fun step =>
+      if Eval.evalBool state step.guard then some (step.update.eval state) else none
+  return outputs
+
+def segmentRequest (j : Json) : Except String Json := do
+  let Γ ← parseContext (← field j "declarations")
+  let Δ ← parseContext (← field j "body_context")
+  let Ω ← parseContext (← field j "output")
+  let env ← parseEnv Γ (← (← field j "values").getArr?).toList
+  let entry ← parseStep Γ Δ (← field j "entry")
+  let steps ← (← (← field j "steps").getArr?).toList.mapM (parseStep Δ Δ)
+  let exits ← (← (← field j "exits").getArr?).toList.mapM (parseStep Δ Ω)
+  let segment : QFAbvSegment Γ Δ Ω := ⟨⟨entry⟩, ⟨steps⟩, exits.map (fun s => ⟨s⟩)⟩
+  let fuel ← natField j "fuel"
+  if fuel > 3 then throw "segment exploration limited to 0..3 transitions"
+  let nodes : List (Ayxg.SegmentNode Nat (QFAbvSegment Γ Δ Ω)) :=
+    [⟨0, segment, []⟩, ⟨1, segment, [0]⟩, ⟨2, segment, [0]⟩]
+  let dag : Ayxg.SegmentDAG Nat (QFAbvSegment Γ Δ Ω) := {
+    nodes := nodes, roots := [1,2]
+    ordered := by simp [nodes, Ayxg.SegmentNode.Ordered]
+    rootsPresent := by
+      intro root h
+      simp at h
+      rcases h with rfl | rfl
+      · exact ⟨⟨1, segment, [0]⟩, by simp [nodes], rfl⟩
+      · exact ⟨⟨2, segment, [0]⟩, by simp [nodes], rfl⟩ }
+  let mut shared := []
+  for parent in dag.nodes.drop 1 do
+    for key in parent.children do
+      let some child := dag.nodes.find? (fun n => n.key == key) | throw "missing DAG child"
+      shared := toJson (← segmentOutputs child.segment env fuel) :: shared
+  return Json.mkObj [("direct", toJson (← segmentOutputs segment env fuel)),
+    ("shared", toJson shared)]
+
 def request (j : Json) : Except String Json := do
+  if (j.getObjVal? "mode" >>= Json.getStr?).toOption == some "segment" then
+    return ← segmentRequest j
   if (j.getObjVal? "mode" >>= Json.getStr?).toOption == some "transition" then
     return ← transitionRequest j
   let ds ← (← field j "declarations").getArr?
