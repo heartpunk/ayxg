@@ -1,3 +1,5 @@
 /.lake/
 /result
 /.direnv/
+
+bazel-*
