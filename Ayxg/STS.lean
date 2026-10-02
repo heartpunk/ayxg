@@ -24,6 +24,20 @@ def runsTransitiveLaw {State Label : Type} (model : STS State Label)
     (semantics : State → Label → State → Prop) : Prop :=
   ∀ a b c, model.Runs semantics a b → model.Runs semantics b c → model.Runs semantics a c
 
+/-- Concatenate finite runs at the shared full state. -/
+theorem runs_trans {State Label : Type} (model : STS State Label)
+    (semantics : State → Label → State → Prop) {a b c : State}
+    (hab : model.Runs semantics a b) (hbc : model.Runs semantics b c) :
+    model.Runs semantics a c := by
+  induction hbc with
+  | refl => exact hab
+  | step _ hstep ih => exact .step ih hstep
+
+theorem runsTransitiveLaw_holds {State Label : Type} (model : STS State Label)
+    (semantics : State → Label → State → Prop) : model.runsTransitiveLaw semantics := by
+  intro a b c hab hbc
+  exact runs_trans model semantics hab hbc
+
 end STS
 
 /-- Structured adapter label between two state types. -/
