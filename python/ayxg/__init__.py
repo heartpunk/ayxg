@@ -7,6 +7,7 @@ from .qfabv import (
     QFAbvStep, QFAbvUpdate, QFAbvValuation, Sort, Value,
 )
 from .expr import Declaration, TermSort, TypedExpr
+from .eval import QFAbvSemantics, equal_valuations, eval_expr, eval_exprs, eval_step, eval_update
 
 __all__ = [
     "Adapter", "ArraySort", "BoolSort", "BVSort", "ControlView", "Declaration",
@@ -14,4 +15,5 @@ __all__ = [
     "QFAbvExpr", "QFAbvSegment", "QFAbvSTS", "QFAbvStep", "QFAbvUpdate",
     "QFAbvValuation", "RelationSemantics", "Segment", "SegmentDAG", "SegmentNode",
     "Sort", "STS", "TermSort", "TypedExpr", "Value",
+    "QFAbvSemantics", "equal_valuations", "eval_expr", "eval_exprs", "eval_step", "eval_update",
 ]
