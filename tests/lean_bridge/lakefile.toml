@@ -1,0 +1,14 @@
+name = "ayxgDerisk"
+defaultTargets = ["Bridge"]
+[[require]]
+name = "LeanPy"
+path = "leanpy"
+[[lean_lib]]
+name = "Ayxg"
+defaultFacets = ["static"]
+[[lean_lib]]
+name = "Bridge"
+moreLinkObjs = ["ayxgDerisk/Ayxg:static", "LeanPy/LeanPy:static", "LeanPy/leanPyNative:static"]
+precompileModules = true
+defaultFacets = ["shared"]
+moreLinkArgs = ["-Wl,-headerpad_max_install_names"]

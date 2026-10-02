@@ -1,0 +1,16 @@
+{
+  "description": "Native-shift panic regression: saturate before materializing an unbounded Nat shift. Concrete representative constructed from the discovered failure category; the original crashing random case was not retained.",
+  "request": {
+    "declarations": [],
+    "values": [],
+    "expression": {
+      "op": "bv_shl",
+      "sort": {"kind": "bv", "width": 64},
+      "args": [
+        {"op": "bv_lit", "sort": {"kind": "bv", "width": 64}, "value": 1},
+        {"op": "bv_lit", "sort": {"kind": "bv", "width": 64}, "value": 18446744073709551615}
+      ]
+    }
+  },
+  "expected": {"kind": "bv", "value": 0}
+}
