@@ -49,9 +49,19 @@ def swap : Subst ctx ctx
   | _, .there .here => .var .here
   | _, .there (.there v) => nomatch v
 
+def freeXUnderLetPar : Expr ctx (.bv 8) :=
+  .letPar (.cons "z" (.bv 8) (.bvLit 8 1) .nil)
+    (.bvBin .add 8 (.var .here) (.var (.there .here)))
+
 def difference : Expr ctx (.bv 8) := .bvBin .sub 8 (.var .here) (.var (.there .here))
 example : Eval.eval env (Expr.subst swap difference) = BitVec.ofNat 8 (4 - 3) := by
   exact Expr.eval_subst swap env difference
+example : Eval.eval env (Expr.subst swap parallelShadow) = false := by
+  rw [Expr.eval_subst swap env parallelShadow]
+  rfl
+example : Eval.eval env (Expr.subst swap freeXUnderLetPar) = BitVec.ofNat 8 5 := by
+  rw [Expr.eval_subst swap env freeXUnderLetPar]
+  rfl
 
 -- The higher-order renaming/substitution theorems also recurse under letPar;
 -- instantiate them on the shadowing example to keep this path checked.
@@ -61,6 +71,24 @@ example : Eval.eval env (Expr.rename (fun v => v) parallelShadow) =
   · intro s v
     rfl
 
+def swapRenaming : Renaming ctx ctx
+  | _, .here => .there .here
+  | _, .there .here => .here
+  | _, .there (.there v) => nomatch v
+def swappedEnv : Env ctx := .cons (BitVec.ofNat 8 4) (.cons (BitVec.ofNat 8 3) .nil)
+def swapAgreement : ∀ {s} (v : Var ctx s),
+    Env.lookup swappedEnv (swapRenaming v) = Env.lookup env v := by
+  intro s v
+  cases v with
+  | here => rfl
+  | there v =>
+    cases v with
+    | here => rfl
+    | there impossible => nomatch impossible
+example : Eval.eval swappedEnv (Expr.rename swapRenaming freeXUnderLetPar) =
+    Eval.eval env freeXUnderLetPar :=
+  Expr.eval_rename swapRenaming env swappedEnv swapAgreement freeXUnderLetPar
+
 /- Small trace examples for the generic LTS constructors: branching, cycles,
    label order, concatenation, and a dead end. -/
 def graph : LTS Nat Bool where
@@ -69,6 +97,8 @@ def graph : LTS Nat Bool where
     (source = 0 ∧ label = true ∧ target = 2) ∨
     (source = 1 ∧ label = false ∧ target = 1) ∨
     (source = 2 ∧ label = false ∧ target = 1)
+def genericView : ControlView Nat Nat Nat := ⟨1⟩
+example : genericView.observe (fun view state => view + state) 2 = 3 := rfl
 
 example : graph.ReachableFrom 1 1 := .refl
 example : graph.ReachableFrom 0 1 :=
@@ -251,3 +281,7 @@ def legacyRun : LTS.QfAbv.SymbolicTransitionSystem.Run
   .cons legacyWitness .nil
 example : legacySystem.toLTS.IsTrace sourceConfig [legacyEdge] targetConfig :=
   LTS.QfAbv.SymbolicTransitionSystem.Run.toTrace legacyRun
+example : Nonempty (LTS.QfAbv.SymbolicTransitionSystem.Run
+    legacySystem sourceConfig [legacyEdge] targetConfig) :=
+  LTS.QfAbv.SymbolicTransitionSystem.Run.exists_of_trace
+    (LTS.QfAbv.SymbolicTransitionSystem.Run.toTrace legacyRun)

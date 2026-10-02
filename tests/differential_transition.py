@@ -25,6 +25,16 @@ def state_result(state):
     return None if state is None else [normalized(value) for value in state.values]
 
 
+def has_variable(node):
+    stack = [node]
+    while stack:
+        current = stack.pop()
+        if current.op == "var":
+            return True
+        stack.extend(current.args)
+    return False
+
+
 def values_data(state):
     return [({"default": v.default, "entries": list(v.entries)}
              if isinstance(v, QFAbvArrayValue) else v) for v in state.values]
@@ -191,6 +201,8 @@ def check(case, oracle, artifacts, lane, counts, coverage, expected=None):
     counts[lane] += 1
     coverage["enabled_left" if python["step"] is not None else "disabled_left"] += 1
     coverage["enabled_composition" if python["composed"] is not None else "disabled_composition"] += 1
+    if has_variable(case.left.guard.node) or has_variable(case.right.guard.node):
+        coverage["state_dependent_guard_cases"] += 1
     if python["step"] is not None and python["composed"] is None:
         coverage["disabled_right_after_enabled_left"] += 1
     contexts = [case.state.context, case.left.update.target, case.right.update.target]

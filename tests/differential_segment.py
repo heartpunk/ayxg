@@ -19,6 +19,16 @@ def output_set(outputs):
     return sorted(set(json.dumps(o,sort_keys=True) for o in outputs))
 
 
+def has_variable(node):
+    stack = [node]
+    while stack:
+        current = stack.pop()
+        if current.op == "var":
+            return True
+        stack.extend(current.args)
+    return False
+
+
 def explore(segment,state,fuel):
     first = eval_step(segment.input.label,state)
     frontier = [] if first is None else [first]
@@ -107,6 +117,15 @@ def check(case,oracle,artifacts,lane,counts,coverage,known=None):
     counts[lane] += 1
     coverage[f"fuel:{case.fuel}"] += 1
     coverage["nonempty_outputs" if direct else "empty_outputs"] += 1
+    if direct:
+        coverage["enabled_outputs"] += 1
+    if len(case.segment.body.steps) > 1:
+        coverage["branching_bodies"] += 1
+    guards = [case.segment.input.label.guard.node,
+              *(step.guard.node for step in case.segment.body.steps),
+              *(exit.label.guard.node for exit in case.segment.exits)]
+    if any(has_variable(guard) for guard in guards):
+        coverage["state_dependent_guard_cases"] += 1
     if any(d.sort.kind == "array" for d in case.state.context.declarations):
         coverage["arrays"] += 1
     if not case.segment.exits:

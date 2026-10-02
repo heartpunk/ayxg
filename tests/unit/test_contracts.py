@@ -175,6 +175,9 @@ class TestSortAndExpressionContracts:
         assert swapped[0] is swapped[1]
         assert substitute_expr(shared, {"x": TypedExpr.bv_lit(4, 2)}) == TypedExpr.binary(
             "bv_add", TypedExpr.bv_lit(4, 2), TypedExpr.bv_lit(4, 1))
+        update = QFAbvUpdate(ctx, ctx, (QFAbvExpr(ctx, BVSort(4), TypedExpr.bv_lit(4, 2)),))
+        assert update.replacements() == {"x": TypedExpr.bv_lit(4, 2)}
+        assert QFAbvExpr(ctx, BVSort(4), x).substitute(update).node == TypedExpr.bv_lit(4, 2)
         with pytest.raises(ArtifactError):
             substitute_exprs((x,), {"x": TypedExpr.bool_lit(True)})
         assert TypedExpr.concat_all([TypedExpr.bv_lit(2, 2), TypedExpr.bv_lit(2, 1)]).sort == TermSort.bv(4)
@@ -244,6 +247,9 @@ class TestValuesAndSemanticsContracts:
         assert equal_valuations(QFAbvValuation(ctx, (a,)), QFAbvValuation(ctx, (b,)))
         c = QFAbvArrayValue(ArraySort(1, 2), 2)
         assert not equal_valuations(QFAbvValuation(ctx, (a,)), QFAbvValuation(ctx, (c,)))
+        renamed_ctx = QFAbvContext((Declaration("renamed", TermSort.array(1, 2)),))
+        assert not equal_valuations(QFAbvValuation(ctx, (a,)),
+                                    QFAbvValuation(renamed_ctx, (b,)))
 
     def test_array_support_is_canonical_and_valuations_are_typed(self):
         sort = ArraySort(2, 3)
