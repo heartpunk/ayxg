@@ -1,5 +1,5 @@
 import LeanPy
-import Ayxg.QfAbv.Eval
+import Ayxg.QfAbv.STS
 open LeanPy Lean Ayxg.QfAbv
 namespace Bridge
 
@@ -111,7 +111,53 @@ def result (s : TermSort) (v : Denote s) : Except String Json := do
       if iw > 8 then throw "array output limited to index width <=8"
       pure ("array", toJson ((List.range (2^iw)).map fun i => (v (BitVec.ofNat iw i)).toNat))
   return Json.mkObj [("kind", toJson kind), ("value", value)]
+def parseContext (j : Json) : Except String Ctx := do
+  (← j.getArr?).toList.mapM parseDecl
+
+def parseUpdate (Γ : Ctx) : (Δ : Ctx) → List Json → Except String (StateUpdate Γ Δ)
+  | [], [] => pure .nil
+  | d :: ds, e :: es => do
+    pure (.cons (← asSort d.sort (← parseExpr Γ e)) (← parseUpdate Γ ds es))
+  | _, _ => throw "update length mismatch"
+
+def parseStep (Γ Δ : Ctx) (j : Json) : Except String (QFAbvStep Γ Δ) := do
+  return ⟨← asSort .bool (← parseExpr Γ (← field j "guard")),
+    ← parseUpdate Γ Δ (← (← field j "rhs").getArr?).toList⟩
+
+def envResult : {Γ : Ctx} → Env Γ → Except String (List Json)
+  | [], .nil => pure []
+  | d :: _, .cons head tail => do
+    return (← result d.sort head) :: (← envResult tail)
+
+def runStep {Γ Δ : Ctx} (step : QFAbvStep Γ Δ) (env : Env Γ) : Except String Json := do
+  if Eval.evalBool env step.guard then
+    return toJson (← envResult (step.update.eval env))
+  else return Json.null
+
+def transitionRequest (j : Json) : Except String Json := do
+  let Γ ← parseContext (← field j "declarations")
+  let env ← parseEnv Γ (← (← field j "values").getArr?).toList
+  let Δ ← parseContext (← field j "middle")
+  let Ω ← parseContext (← field j "output")
+  let left ← parseStep Γ Δ (← field j "left")
+  let right ← parseStep Δ Ω (← field j "right")
+  let sequential ← if Eval.evalBool env left.guard then
+    runStep right (left.update.eval env) else pure Json.null
+  return Json.mkObj [
+    ("update", toJson (← envResult (left.update.eval env))),
+    ("update_composed", toJson (← envResult ((left.update.compose right.update).eval env))),
+    ("update_sequential", toJson (← envResult (right.update.eval (left.update.eval env)))),
+    ("step", ← runStep left env),
+    ("composed", ← runStep (left.compose right) env),
+    ("sequential", sequential),
+    ("identity_update", toJson (← envResult ((StateUpdate.identity Γ).eval env))),
+    ("identity_step", ← runStep (QFAbvStep.identity Γ) env),
+    ("identity_left", ← runStep ((QFAbvStep.identity Γ).compose left) env),
+    ("identity_right", ← runStep (left.compose (QFAbvStep.identity Δ)) env)]
+
 def request (j : Json) : Except String Json := do
+  if (j.getObjVal? "mode" >>= Json.getStr?).toOption == some "transition" then
+    return ← transitionRequest j
   let ds ← (← field j "declarations").getArr?
   let Γ ← ds.toList.mapM parseDecl
   let values ← (← field j "values").getArr?
