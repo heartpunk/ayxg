@@ -171,6 +171,16 @@ def explicit_cases():
         read = TypedExpr.select(TypedExpr.var("m",arr),TypedExpr.bv_lit(2,1))
         right = QFAbvStep(wrap(mid,TypedExpr.equal(read,TypedExpr.bv_lit(8,7))),QFAbvUpdate(mid,out,(wrap(mid,read),)))
         yield TransitionCase(state,left,right), {"composed": [normalized(7)]}
+    # Empty contexts are valid: both identities and enabled composition denote
+    # the sole empty valuation.
+    empty = QFAbvContext(())
+    empty_state = QFAbvValuation(empty, ())
+    left = QFAbvStep(wrap(empty, TypedExpr.bool_lit(True)), QFAbvUpdate.identity(empty))
+    right = QFAbvStep.identity(empty)
+    yield TransitionCase(empty_state, left, right), {
+        "update": [], "composed": [], "sequential": [],
+        "identity_update": [], "identity_step": [],
+    }
 
 
 def check(case, oracle, artifacts, lane, counts, coverage, expected=None):

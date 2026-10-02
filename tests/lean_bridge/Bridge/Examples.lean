@@ -75,6 +75,9 @@ example : graph.ReachableFrom 0 1 :=
 example : graph.ReachableFrom 0 2 :=
   LTS.ReachableFrom.step (s := 0) (s' := 2) (l := true) .refl (by simp [graph])
 example : graph.IsTrace 0 [] 0 := .nil 0
+example : graph.IsTrace 0 [true] 2 :=
+  LTS.IsTrace.cons true [] (s₁ := 0) (s₂ := 2) (s₃ := 2)
+    (by simp [graph]) (.nil 2)
 example : graph.IsTrace 0 [false, false] 1 := by
   exact LTS.IsTrace.cons false [false] (s₁ := 0) (s₂ := 1) (s₃ := 1)
     (by simp [graph])
@@ -94,6 +97,16 @@ example : graph.IsTrace 0 [false, false] 1 :=
 example : ¬ ∃ label target, graph.Tr 3 label target := by
   rintro ⟨label, target, h⟩
   simp [graph] at h
+
+-- STS.Runs includes the zero-step path and only admits listed labels.
+def graphSTS : STS Nat Bool := ⟨[false, true]⟩
+def graphSemantics : Nat → Bool → Nat → Prop := graph.Tr
+example : graphSTS.Runs graphSemantics 0 0 := .refl
+example : graphSTS.Runs graphSemantics 0 2 := by
+  simpa [STS.Runs, STS.toLTS, graphSTS, graphSemantics] using
+    (LTS.ReachableFrom.step (lts := graphSTS.toLTS graphSemantics)
+      (s := 0) (s' := 2) (l := true) .refl
+      ⟨by decide, by simp [graph, graphSemantics]⟩)
 
 /- Direct examples use Segment.denotes itself, including empty and one-step body runs. -/
 def exampleSegment : Segment Nat Nat Nat Nat Nat Nat :=
@@ -130,11 +143,31 @@ example : (identityLabel.compose identityLabel).denotes env env := by
 def sourceConfig : LTS.QfAbv.Config Nat ctx := ⟨0, env⟩
 def targetConfig : LTS.QfAbv.Config Nat ctx := ⟨1, env⟩
 def legacyEdge : LTS.QfAbv.SymbolicTransition Nat ctx := ⟨0, some 1, identityLabel⟩
+def legacyRetain : LTS.QfAbv.SymbolicTransition Nat ctx := ⟨0, none, identityLabel⟩
 def legacySystem : LTS.QfAbv.SymbolicTransitionSystem Nat ctx
     (LTS.QfAbv.SymbolicTransition Nat ctx) :=
   LTS.QfAbv.SymbolicTransitionSystem.legacy
     (fun control => if control == 0 then [legacyEdge] else [])
 example : legacyEdge.nextConfig sourceConfig = targetConfig := rfl
-example (run : LTS.QfAbv.SymbolicTransitionSystem.Run legacySystem sourceConfig
-    labels targetConfig) : legacySystem.toLTS.IsTrace sourceConfig labels targetConfig :=
-  LTS.QfAbv.SymbolicTransitionSystem.Run.toTrace run
+example : (legacyRetain.nextConfig sourceConfig).control = sourceConfig.control := by
+  exact LTS.QfAbv.SymbolicTransition.nextConfig_control_of_tgt_none
+    legacyRetain sourceConfig rfl
+
+def legacyWitness : LTS.QfAbv.SymbolicTransitionSystem.StepWitness
+    legacySystem sourceConfig targetConfig := by
+  refine ⟨legacyEdge, ?_, ?_⟩
+  · simp [legacySystem, legacyEdge, sourceConfig,
+      LTS.QfAbv.SymbolicTransitionSystem.legacy]
+  · change LTS.QfAbv.SymbolicTransition.edgeSemantics.denotes
+      legacyEdge sourceConfig targetConfig
+    simp [legacyEdge, sourceConfig, targetConfig, identityLabel,
+      LTS.QfAbv.SymbolicTransition.edgeSemantics,
+      LTS.QfAbv.SymbolicEdgeSemantics.denotes,
+      LTS.QfAbv.SymbolicEdgeSemantics.nextConfig,
+      SymbolicLabel.identity, StateUpdate.eval_identity, Eval.eval]
+
+def legacyRun : LTS.QfAbv.SymbolicTransitionSystem.Run
+    legacySystem sourceConfig [legacyEdge] targetConfig :=
+  .cons legacyWitness .nil
+example : legacySystem.toLTS.IsTrace sourceConfig [legacyEdge] targetConfig :=
+  LTS.QfAbv.SymbolicTransitionSystem.Run.toTrace legacyRun

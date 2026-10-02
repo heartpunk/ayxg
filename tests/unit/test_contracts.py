@@ -10,7 +10,7 @@ from ayxg import (
 )
 from ayxg.expr import ArtifactError
 from ayxg.qfabv import decode_sort
-from ayxg.substitution import substitute_exprs
+from ayxg.substitution import substitute_expr, substitute_exprs
 
 
 def expr(ctx, node):
@@ -26,6 +26,9 @@ class TestSortAndExpressionContracts:
         assert BoolSort().encode() == TermSort.bool()
         assert BVSort(8).encode() == TermSort.bv(8)
         assert ArraySort(3, 8).encode() == TermSort.array(3, 8)
+        for build in [lambda: BVSort(0), lambda: ArraySort(0, 1), lambda: ArraySort(1, 0)]:
+            with pytest.raises(ValueError):
+                build()
 
     def test_sort_deserialization_rejects_bad_shapes_and_widths(self):
         for data in [None, {}, {"kind": "bool", "width": 1},
@@ -145,6 +148,8 @@ class TestSortAndExpressionContracts:
         assert unchanged[0] is unchanged[1]
         swapped = substitute_exprs((shared, shared), {"x": TypedExpr.bv_lit(4, 2)})
         assert swapped[0] is swapped[1]
+        assert substitute_expr(shared, {"x": TypedExpr.bv_lit(4, 2)}) == TypedExpr.binary(
+            "bv_add", TypedExpr.bv_lit(4, 2), TypedExpr.bv_lit(4, 1))
         with pytest.raises(ArtifactError):
             substitute_exprs((x,), {"x": TypedExpr.bool_lit(True)})
         assert TypedExpr.concat_all([TypedExpr.bv_lit(2, 2), TypedExpr.bv_lit(2, 1)]).sort == TermSort.bv(4)
@@ -228,6 +233,9 @@ class TestValuesAndSemanticsContracts:
             QFAbvValuation(ctx, (True, 4))
         with pytest.raises(ValueError):
             QFAbvValuation(ctx, (True,))
+        array_ctx = QFAbvContext((Declaration("m", TermSort.array(2, 3)),))
+        with pytest.raises(ValueError):
+            QFAbvValuation(array_ctx, (QFAbvArrayValue(ArraySort(2, 2), 0),))
         with pytest.raises(ValueError):
             QFAbvArrayValue(sort, True)
         with pytest.raises(ValueError):
@@ -269,6 +277,7 @@ class TestValuesAndSemanticsContracts:
         step = QFAbvStep.identity(ctx)
         sts_model = QFAbvSTS(ctx, (step,))
         sts = sts_model.to_sts()
+        assert sts.steps == (step,)
         sem = QFAbvSemantics()
         assert sts.denotes(state, step, state, sem)
         absent = QFAbvStep(expr(ctx, TypedExpr.bool_lit(True)),
@@ -322,3 +331,9 @@ class TestValuesAndSemanticsContracts:
                 SegmentDAG(nodes, ())
         with pytest.raises(ValueError):
             SegmentDAG((SegmentNode(0, payload),), (9,))
+
+    def test_control_view_and_adapter_are_plain_syntax_payloads(self):
+        generic_view = ControlView[int, int, str]("pc")
+        assert generic_view.projection == "pc"
+        generic_adapter = Adapter[int, int, str]("copy")
+        assert generic_adapter.label == "copy"

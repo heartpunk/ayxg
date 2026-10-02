@@ -138,7 +138,19 @@ def explicit_cases():
             [[{"kind":"bv","value":n}] for n in range(2*fuel+1)])
     # Empty body supports zero-step exits; no exits gives the empty relation.
     yield Case(Segment(Adapter(entry),STS(()),(Adapter(exit),)),QFAbvValuation(source,(9,)),3), output_set([[{"kind":"bv","value":9}]])
+    # Distinct enabled output adapters contribute distinct results.
+    plus_one = QFAbvStep(wrap(body,TypedExpr.bool_lit(True)),
+        QFAbvUpdate(body,output,(wrap(body,TypedExpr.binary("bv_add",x,TypedExpr.bv_lit(8,1))),)))
+    yield Case(Segment(Adapter(entry),STS(()),(Adapter(exit),Adapter(plus_one))),
+        QFAbvValuation(source,(9,)),0), output_set([
+            [{"kind":"bv","value":9}], [{"kind":"bv","value":10}]])
     yield Case(Segment(Adapter(entry),STS((steps[0],)),()),QFAbvValuation(source,(9,)),3), []
+    disabled_entry = QFAbvStep(wrap(source,TypedExpr.bool_lit(False)),entry.update)
+    yield Case(Segment(Adapter(disabled_entry),STS((steps[0],)),(Adapter(exit),)),
+        QFAbvValuation(source,(9,)),1), []
+    disabled_exit = QFAbvStep(wrap(body,TypedExpr.bool_lit(False)),exit.update)
+    yield Case(Segment(Adapter(entry),STS((steps[0],)),(Adapter(disabled_exit),)),
+        QFAbvValuation(source,(9,)),1), []
     # A self-loop remains bounded by the chosen run length.
     loop = QFAbvStep(wrap(body,TypedExpr.bool_lit(True)),
         QFAbvUpdate(body,body,(wrap(body,TypedExpr.binary("bv_add",x,TypedExpr.bv_lit(8,1))),)))
@@ -158,7 +170,7 @@ def main():
     try:
         for case,known in explicit_cases():
             check(case,oracle,args.artifacts,"explicit",counts,coverage,known)
-        print("PASS explicit branching, zero-step, empty-body, no-exit, and cycle cases",flush=True)
+        print("PASS explicit branching, zero-step, distinct exits, disabled adapters, no-exit, and cycle cases",flush=True)
         for lane in ["random","enabled","disabled_entry","disabled_exit","mixed_exits"]:
             for fuel in range(4):
                 name = f"{lane}-{fuel}"
