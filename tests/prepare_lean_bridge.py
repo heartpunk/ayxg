@@ -30,6 +30,7 @@ def main() -> None:
         shutil.copy2(source / name, work / name)
     for name in ["Bridge.lean", "lakefile.toml"]:
         shutil.copy2(source / "tests" / "lean_bridge" / name, work / name)
+    shutil.copytree(source / "tests" / "lean_bridge" / "Bridge", work / "Bridge", dirs_exist_ok=True)
     leanpy = work / "leanpy"
     if not leanpy.exists():
         if args.lean_py_source:

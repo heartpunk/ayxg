@@ -64,17 +64,27 @@ def cases(draw,fuel,lane):
     state = QFAbvValuation(source,base.state.values)
     replacements = {d.name:TypedExpr.var("in_"+d.name,d.sort) for d in body.declarations}
     nodes = substitute_exprs((base.left.guard.node,*(e.node for e in base.left.update.rhs)),replacements)
-    guard = TypedExpr.bool_lit(False) if lane == "disabled_entry" else TypedExpr.bool_lit(True) if lane == "enabled" else nodes[0]
+    guard = TypedExpr.bool_lit(False) if lane == "disabled_entry" else TypedExpr.bool_lit(True) if lane in {"enabled", "mixed_exits"} else nodes[0]
     entry = QFAbvStep(wrap(source,guard),QFAbvUpdate(source,body,tuple(wrap(source,n) for n in nodes[1:])))
     steps = (base.left,base.right)
-    if lane == "enabled":
+    if lane in {"enabled", "mixed_exits"}:
         steps = tuple(QFAbvStep(wrap(body,TypedExpr.bool_lit(True)),s.update) for s in steps)
     target = QFAbvContext(tuple(Declaration("out_"+d.name,d.sort) for d in reversed(body.declarations)))
     exits = []
     exit_count = draw(st.integers(0,2)) if lane == "random" else 2
-    for _ in range(exit_count):
-        guard = TypedExpr.bool_lit(False) if lane == "disabled_exit" else TypedExpr.bool_lit(True) if lane == "enabled" else base.right.guard.node
-        update = QFAbvUpdate(body,target,tuple(reversed(base.right.update.rhs)))
+    for exit_index in range(exit_count):
+        # Different adapters must denote different relations. Keep the first
+        # projection and perturb numeric outputs on later exits.
+        guard = (TypedExpr.bool_lit(False) if lane == "disabled_exit" or (lane == "mixed_exits" and exit_index == 0)
+                 else TypedExpr.bool_lit(True) if lane in {"enabled", "mixed_exits"} else base.right.guard.node)
+        projected = tuple(reversed(base.right.update.rhs))
+        rhs = []
+        for declaration, value_expr in zip(target.declarations, projected):
+            node = value_expr.node
+            if exit_index and declaration.sort.kind == "bv":
+                node = TypedExpr.binary("bv_add", node, TypedExpr.bv_lit(declaration.sort.width, exit_index))
+            rhs.append(wrap(body, node))
+        update = QFAbvUpdate(body,target,tuple(rhs))
         exits.append(Adapter(QFAbvStep(wrap(body,guard),update)))
     return Case(Segment(Adapter(entry),STS(steps),tuple(exits)),state,fuel)
 
@@ -100,7 +110,12 @@ def check(case,oracle,artifacts,lane,counts,coverage,known=None):
         coverage["no_exits"] += 1
     if len(direct) > 1:
         coverage["multiple_distinct_outputs"] += 1
-    if observed != expected or shared != [direct,direct] or (lane.startswith("disabled") and direct) or (known is not None and direct != known):
+    if len(case.segment.exits) > 1 and len({e.label.update.rhs for e in case.segment.exits}) > 1:
+        coverage["distinct_exit_relations"] += 1
+    if (observed != expected or shared != [direct,direct]
+            or (lane.startswith("disabled") and direct)
+            or (lane == "mixed_exits" and not direct)
+            or (known is not None and direct != known)):
         mismatch = {"request":request,"python":expected,"lean":observed}
         (artifacts / f"mismatch-{lane}.json").write_text(json.dumps(mismatch,indent=2))
         raise AssertionError(mismatch)
@@ -121,6 +136,14 @@ def explicit_cases():
     for fuel in range(4):
         yield Case(segment,QFAbvValuation(source,(0,)),fuel), output_set(
             [[{"kind":"bv","value":n}] for n in range(2*fuel+1)])
+    # Empty body supports zero-step exits; no exits gives the empty relation.
+    yield Case(Segment(Adapter(entry),STS(()),(Adapter(exit),)),QFAbvValuation(source,(9,)),3), output_set([[{"kind":"bv","value":9}]])
+    yield Case(Segment(Adapter(entry),STS((steps[0],)),()),QFAbvValuation(source,(9,)),3), []
+    # A self-loop remains bounded by the chosen run length.
+    loop = QFAbvStep(wrap(body,TypedExpr.bool_lit(True)),
+        QFAbvUpdate(body,body,(wrap(body,TypedExpr.binary("bv_add",x,TypedExpr.bv_lit(8,1))),)))
+    yield Case(Segment(Adapter(entry),STS((loop,)),(Adapter(exit),)),QFAbvValuation(source,(9,)),3), output_set(
+        [[{"kind":"bv","value":n}] for n in [9,10,11,12]])
 
 
 def main():
@@ -135,8 +158,8 @@ def main():
     try:
         for case,known in explicit_cases():
             check(case,oracle,args.artifacts,"explicit",counts,coverage,known)
-        print("PASS explicit branching/zero-step bounds",flush=True)
-        for lane in ["random","enabled","disabled_entry","disabled_exit"]:
+        print("PASS explicit branching, zero-step, empty-body, no-exit, and cycle cases",flush=True)
+        for lane in ["random","enabled","disabled_entry","disabled_exit","mixed_exits"]:
             for fuel in range(4):
                 name = f"{lane}-{fuel}"
                 @settings(max_examples=args.examples,deadline=None,

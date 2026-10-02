@@ -8,6 +8,9 @@ version = "0.1.0"
 requires-python = ">=3.11"
 description = "Typed structured transition systems and segment interfaces"
 
+[project.optional-dependencies]
+test = ["pytest>=8", "hypothesis>=6"]
+
 [tool.setuptools]
 package-dir = {"" = "python"}
 
