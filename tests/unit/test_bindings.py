@@ -136,3 +136,10 @@ def test_ordered_array_snapshot_binding():
         E.let_par((Declaration('old_read',B),Declaration('new_memory',arr)),(read,later),
             E.binary('bv_add',E.at(0,B),E.select(E.at(1,arr),E.bv_lit(2,0)))))
     assert evaluate(node) == 14
+
+
+def test_binding_names_are_metadata_and_zero_extension_is_valid():
+    for name in ('', '__ghot_memory_read_0__', 'arbitrary name', 'λ'):
+        node = E.let_par((Declaration(name,B),),(E.bv_lit(8,23),),E.at(0,B))
+        assert evaluate(loads(dumps(node))) == 23
+    assert evaluate(E('zero_extend', B, (E.bv_lit(8,23),), amount=0)) == 23

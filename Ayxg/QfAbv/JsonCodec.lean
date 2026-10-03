@@ -204,6 +204,10 @@ def parseRootsDag (Γ : Ctx) (j : Json) : Except String (List (TypedExpr Γ)) :=
     throw "unknown expression DAG encoding"
   let nodes ← (← field j "nodes").getArr?
   let roots ← (← field j "roots").getArr?
-  (roots.toList.mapM fun (root : Json) => do parseDagAt nodes Γ (← root.getNat?)).run' {}
+  let action : StateT DagCache (Except String) (List (TypedExpr Γ)) :=
+    roots.toList.mapM fun (root : Json) => do
+      let index ← root.getNat?
+      parseDagAt nodes Γ index
+  action.run' {}
 
 end Ayxg.QfAbv.JsonCodec

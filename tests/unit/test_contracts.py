@@ -43,7 +43,7 @@ class TestSortAndExpressionContracts:
     def test_declaration_roundtrip_and_identifier_rejection(self):
         declaration = Declaration("pc:main", TermSort.bv(16))
         assert Declaration.from_data(declaration.to_data()) == declaration
-        for name in ["", "_bad", "bad name"]:
+        for name in [None, 1, False]:
             with pytest.raises(ArtifactError):
                 Declaration(name, TermSort.bool())
 
@@ -147,7 +147,7 @@ class TestSortAndExpressionContracts:
             lambda: TypedExpr("ite", w, (x, x, x)),
             lambda: TypedExpr("bv_lit", w, value=16),
             lambda: TypedExpr("bv_lit", w, value=True),
-            lambda: TypedExpr("zero_extend", w, (x,), amount=0),
+            lambda: TypedExpr("zero_extend", w, (x,), amount=-1),
             lambda: TypedExpr("extract", w, (x,), hi=4, lo=0),
             lambda: TypedExpr("extract", w, (x,), hi=1, lo=2),
             lambda: TypedExpr("select", w, (x, i)),

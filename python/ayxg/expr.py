@@ -23,8 +23,8 @@ def _nonnegative(value: Any, field: str) -> int:
     return value
 
 def _identifier(value: Any, field: str) -> str:
-    if not isinstance(value, str) or not _ID_RE.fullmatch(value):
-        raise ArtifactError(f"{field} is not a canonical identifier")
+    if not isinstance(value, str):
+        raise ArtifactError(f"{field} must be a string")
     return value
 
 def _text(value: Any, field: str) -> str:
@@ -334,7 +334,7 @@ class TypedExpr:
             self._require_arity(1)
             if (
                 type(self.amount) is not int
-                or self.amount <= 0
+                or self.amount < 0
                 or self.args[0].sort.kind != "bv"
                 or self.sort
                 != TermSort.bv(self.args[0].sort.require_bv_width() + self.amount)
