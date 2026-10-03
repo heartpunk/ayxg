@@ -17,7 +17,7 @@
         in {
           default = pkgs.mkShell {
             AYXG_NIX_LIBSTDCXX_ROOT = pkgs.lib.optionalString pkgs.stdenv.isLinux "${pkgs.stdenv.cc.cc.lib}";
-            packages = [ pkgs.git pkgs.lean (pkgs.python312.withPackages (ps: [ ps.z3-solver ps.pytest ps.hypothesis ]))
+            packages = [ pkgs.git pkgs.lean (pkgs.python312.withPackages (ps: [ (import ./nix/z3-python.nix { inherit pkgs; }) ps.pytest ps.hypothesis ]))
               (if pkgs.stdenv.isLinux then pkgs.bazel_9 else pkgs.bazelisk)
             ];
           };
