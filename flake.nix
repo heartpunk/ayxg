@@ -12,7 +12,12 @@
       devShells = nixpkgs.lib.genAttrs systems (system:
         let pkgs = import nixpkgs {
           inherit system;
-          overlays = [ (lean4-nix.readToolchainFile ./lean-toolchain) ];
+          overlays = [ (final: prev: {
+            lean = (prev.callPackage "${lean4-nix}/lib/toolchain.nix" {}).fetchBinaryLean
+              ((import ./nix/lean-4.34.nix) // {
+                inherit (import "${lean4-nix}/manifests/v4.31.0.nix") bootstrap buildLeanPackage;
+              });
+          }) ];
         };
         in {
           default = pkgs.mkShell {
