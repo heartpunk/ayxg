@@ -57,7 +57,9 @@ def freeXUnderLetPar : Expr ctx (.bv 8) :=
 
 def difference : Expr ctx (.bv 8) := .bvBin .sub 8 (.var .here) (.var (.there .here))
 example : Eval.eval env (Expr.subst swap difference) = BitVec.ofNat 8 (4 - 3) := by
-  exact Expr.eval_subst swap env difference
+  rw [Expr.eval_subst swap env difference]
+  change (BitVec.ofNat 8 4 - BitVec.ofNat 8 3) = BitVec.ofNat 8 (4 - 3)
+  decide
 example : Eval.eval env (Expr.subst swap parallelShadow) = false := by
   rw [Expr.eval_subst swap env parallelShadow]
   rfl

@@ -37,7 +37,7 @@ def expression(op,eb,sb,a,b,c,mode):
 
 def main():
     p=argparse.ArgumentParser();p.add_argument('--bridge-project',type=Path,required=True);p.add_argument('--artifacts',type=Path,default=Path('.differential-fp'));p.add_argument('--examples',type=int,default=20);args=p.parse_args();args.artifacts.mkdir(parents=True,exist_ok=True)
-    oracle=LeanOracle(args.bridge_project,args.artifacts);counts=Counter();ctx=QFAbvContext(());state=QFAbvValuation(ctx,())
+    oracle=LeanOracle(args.bridge_project,args.artifacts);counts=Counter();format_counts=Counter();corners=0;ctx=QFAbvContext(());state=QFAbvValuation(ctx,())
     def evaluate(node):return eval_expr(QFAbvExpr(ctx,decode_sort(node.sort),node),state)
     def check(node):
         try:value=evaluate(node)
@@ -51,12 +51,26 @@ def main():
         if actual!=expected:
             evidence={'request':request,'python':expected,'lean':actual};(args.artifacts/'counterexample.json').write_text(json.dumps(evidence,indent=2));raise AssertionError(evidence)
         counts[node.op]+=1
+        format_counts[f"{eb}/{sb}:{node.op}"]+=1
     try:
         for eb,sb in [(3,4),(8,24),(11,53)]:
             sign=1<<(eb+sb-1);inf=((1<<eb)-1)<<(sb-1)
             samples=[0,sign,1,sign|1,(1<<(sb-1))-1,1<<(sb-1),inf-1,sign|(inf-1),inf,sign|inf,inf|1]
             if eb==11:samples += [0x3ff0000000000000,0x3ca0000000000000,0xbff0000000000000,0xbca0000000000000,0x3ff0000000000001]
             if eb==8:samples+=[0x3f800000,0x33800000,0xbf800000,0xb3800000,0x3f800001]
+            # Guarantee the carrier equality / IEEE comparison distinction and
+            # opposite-zero interpretation cases; random inputs cannot promise these.
+            for op,a,b in [('eq',inf|1,inf|1),('fp_eq',inf|1,inf|1),
+                           ('eq',0,sign),('fp_eq',0,sign),
+                           ('fp_min',0,sign),('fp_min',sign,0),
+                           ('fp_max',0,sign),('fp_max',sign,0)]:
+                check(expression(op,eb,sb,a,b,0,RoundingMode.RNE));corners+=1
+            bias=(1<<(eb-1))-1;one=bias<<(sb-1)
+            half=(bias-sb)<<(sb-1) if bias-sb>0 else 1<<(bias-2)
+            for mode in RoundingMode:
+                for a,b in [(one,half),(sign|one,sign|half)]:
+                    check(expression('fp_add',eb,sb,a,b,0,mode));corners+=1
+                check(expression('fp_fma',eb,sb,one+1,one-2,sign|one,mode));corners+=1
             for op in OPS:
                 for mode in RoundingMode:
                     for i,a in enumerate(samples):check(expression(op,eb,sb,a,samples[(i+3)%len(samples)],samples[(i+7)%len(samples)],mode))
@@ -64,7 +78,9 @@ def main():
                 @given(st.integers(0,(1<<(eb+sb))-1),st.integers(0,(1<<(eb+sb))-1),st.integers(0,(1<<(eb+sb))-1),st.sampled_from(list(RoundingMode)))
                 def prop(a,b,c,mode):check(expression(op,eb,sb,a,b,c,mode))
                 prop()
-        report={'counts':dict(counts),'total':sum(counts.values()),'interpretation':'NaN canonical bits; invalid casts=0; oppositezero tie=left sign'};(args.artifacts/'coverage.json').write_text(json.dumps(report,indent=2));print(json.dumps(report))
+        report={'counts':dict(counts),'total':sum(counts.values()),'interpretation':'NaN canonical bits; invalid casts=0; oppositezero tie=left sign',
+                'counts_by_format':dict(format_counts),'explicit_corner_comparisons':corners,
+                'rounding_modes':[mode.value for mode in RoundingMode]};(args.artifacts/'coverage.json').write_text(json.dumps(report,indent=2));print(json.dumps(report))
     finally:oracle.close()
 
 if __name__=='__main__':main()

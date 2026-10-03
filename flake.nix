@@ -35,7 +35,7 @@
               export FLOATLIB_BUILD_DIR="$PWD/.lake/floatlib-build"
             '';
             AYXG_NIX_LIBSTDCXX_ROOT = pkgs.lib.optionalString pkgs.stdenv.isLinux "${pkgs.stdenv.cc.cc.lib}";
-            packages = [ pkgs.git pkgs.lean (pkgs.python312.withPackages (ps: [ (import ./nix/z3-python.nix { inherit pkgs; }) ps.pytest ps.hypothesis ]))
+            packages = [ pkgs.git pkgs.lean (pkgs.python312.withPackages (ps: [ (import ./nix/z3-python.nix { inherit pkgs; }) ps.pytest ps.hypothesis ps.pycparser ]))
               (if pkgs.stdenv.isLinux then pkgs.bazel_9 else pkgs.bazelisk)
             ];
           };

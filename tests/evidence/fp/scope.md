@@ -34,7 +34,7 @@ Lean4.34 binary hashes are official GitHub release asset digests; existing pinne
 lean4-nix's binary loader is reused with a local manifest because its manifest
 set ends at4.31. No sibling toolchain workspace was changed.
 
-Preliminary local Python:7 unit tests pass,160 operation/mode transport subcases,
+Preliminary local Python:10 unit tests pass,160 operation/mode transport subcases,
 special values, equality distinction, RNE/RNA tie, DAG substitution and typed
 valuation. Local Z34.16 is not authoritative (known baseline array bug); supported
 pinned5.1 Linux results will be recorded separately.

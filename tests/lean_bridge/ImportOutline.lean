@@ -14,5 +14,5 @@ def main : IO Unit := do
       let names := header.imports.map fun entry => Lean.Json.str entry.module.toString
       output.putStrLn (Lean.Json.arr names).compress
     catch error =>
-      output.putStrLn (Lean.Json.mkObj [("error", toJson error.toString)]).compress
+      output.putStrLn (Lean.Json.mkObj [("error", Lean.Json.str error.toString)]).compress
     output.flush

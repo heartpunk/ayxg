@@ -150,13 +150,12 @@ partial def parseExpr (Γ : Ctx) (j : Json) : Except String (TypedExpr Γ) := do
 
 def parseDecl (j : Json) : Except String Decl := do
   return ⟨← (← field j "name").getStr?, ← sortOf (← field j "sort")⟩
-def parseValue (s : TermSort) (j : Json) : Except String (Denote s) := do
-  match s with
-  | .fp f => return FPValue.ofBits f (BitVec.ofNat f.bitWidth (← j.getNat?))
-  | .roundingMode => modeOf (← j.getStr?)
-  | .bool => j.getBool?
-  | .bv w => return BitVec.ofNat w (← j.getNat?)
-  | .array iw vw =>
+def parseValue : (s : TermSort) → Json → Except String (Denote s)
+  | .fp f, j => do return FPValue.ofBits f (BitVec.ofNat f.bitWidth (← j.getNat?))
+  | .roundingMode, j => do modeOf (← j.getStr?)
+  | .bool, j => j.getBool?
+  | .bv w, j => do return BitVec.ofNat w (← j.getNat?)
+  | .array iw vw, j => do
     let d ← natField j "default"
     let entries ← (← field j "entries").getArr?
     let mut mem : Mem iw vw := Eval.memConst (BitVec.ofNat vw d)
@@ -170,16 +169,16 @@ def parseEnv : (Γ : Ctx) → List Json → Except String (Env Γ)
   | [], [] => pure .nil
   | d :: ds, v :: vs => do pure (.cons (← parseValue d.sort v) (← parseEnv ds vs))
   | _, _ => throw "valuation length mismatch"
-def result (s : TermSort) (v : Denote s) : Except String Json := do
-  let (kind, value) ← match s with
-    | .fp _ => pure ("fp", toJson v.model.toNatBits)
-    | .roundingMode => pure ("rm", toJson (modeString v))
-    | .bool => pure ("bool", toJson v)
-    | .bv _ => pure ("bv", toJson v.toNat)
-    | .array iw _ => do
-      if iw > 8 then throw "array output limited to index width <=8"
-      pure ("array", toJson ((List.range (2^iw)).map fun i => (v (BitVec.ofNat iw i)).toNat))
-  return Json.mkObj [("kind", toJson kind), ("value", value)]
+def resultJson (kind : String) (value : Json) : Json :=
+  Json.mkObj [("kind", toJson kind), ("value", value)]
+def result : (s : TermSort) → Denote s → Except String Json
+  | .fp _, v => pure (resultJson "fp" (toJson v.model.toNatBits))
+  | .roundingMode, v => pure (resultJson "rm" (toJson (modeString v)))
+  | .bool, v => pure (resultJson "bool" (toJson v))
+  | .bv _, v => pure (resultJson "bv" (toJson v.toNat))
+  | .array iw _, v => do
+    if iw > 8 then throw "array output limited to index width <=8"
+    pure (resultJson "array" (toJson ((List.range (2^iw)).map fun i => (v (BitVec.ofNat iw i)).toNat)))
 def parseContext (j : Json) : Except String Ctx := do
   (← j.getArr?).toList.mapM parseDecl
 
