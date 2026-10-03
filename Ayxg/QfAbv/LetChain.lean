@@ -14,8 +14,8 @@ namespace LetChain
 binding objects and their RHS expression DAGs are reused across closed fields. -/
 def close : LetChain Γ Δ → ({s : TermSort} → Expr Δ s → Expr Γ s)
   | .nil => fun body => body
-  | .snoc prefix bindings =>
-      let outer := close prefix
+  | .snoc prior bindings =>
+      let outer := close prior
       fun body => outer (.letPar bindings body)
 
 /-- Close every RHS of a simultaneous update in the same binding environment. -/
@@ -29,14 +29,14 @@ variable [FPInterpretation]
 /-- Independently evaluate the successive binding environments. -/
 def eval : LetChain Γ Δ → Env Γ → Env Δ
   | .nil, env => env
-  | .snoc prefix bindings, env => Eval.evalBindings (prefix.eval env) bindings
+  | .snoc prior bindings, env => Eval.evalBindings (prior.eval env) bindings
 
 /-- Nested-let closure preserves the environment-based meaning of a term. -/
 theorem eval_close (chain : LetChain Γ Δ) (env : Env Γ) (term : Expr Δ s) :
     Eval.eval env (chain.close term) = Eval.eval (chain.eval env) term := by
   induction chain with
   | nil => rfl
-  | snoc prefix bindings ih =>
+  | snoc prior bindings ih =>
       dsimp [close, eval]
       rw [ih]
       rfl
