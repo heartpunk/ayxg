@@ -233,7 +233,7 @@ def emit (s : TermSort) (op : String) (args : List Nat := [])
   let state ← get
   if let some index := state.interned[key]? then return index
   let index := state.nodes.size
-  set { nodes := state.nodes.push node, interned := state.interned.insert key index }
+  set ({ nodes := state.nodes.push node, interned := state.interned.insert key index } : Writer)
   return index
 
 mutual
