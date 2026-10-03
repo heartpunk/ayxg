@@ -42,11 +42,21 @@ def lookup (name : String) : (Γ : Ctx) → Except String (TypedExpr Γ)
     match e with
     | .var v => return .mk s (.var (.there v))
     | _ => throw "invalid lookup"
+def lookupIndex : Nat → (Γ : Ctx) → Except String (TypedExpr Γ)
+  | _, [] => throw "variable position outside context"
+  | 0, d :: _ => return .mk d.sort (.var .here)
+  | n + 1, _ :: ds => do
+    let .mk s e ← lookupIndex n ds
+    match e with
+    | .var v => return .mk s (.var (.there v))
+    | _ => throw "invalid positional lookup"
+
 def binOp : String → Option BvBinOp
   | "bv_add" => some .add | "bv_sub" => some .sub | "bv_mul" => some .mul
   | "bv_udiv" => some .udiv | "bv_urem" => some .urem | "bv_and" => some .and
   | "bv_or" => some .or | "bv_xor" => some .xor | "bv_shl" => some .shl
   | "bv_lshr" => some .lshr | "bv_ashr" => some .ashr | _ => none
+mutual
 partial def parseExpr (Γ : Ctx) (j : Json) : Except String (TypedExpr Γ) := do
   let op ← (← field j "op").getStr?
   let s ← sortOf (← field j "sort")
@@ -56,7 +66,16 @@ partial def parseExpr (Γ : Ctx) (j : Json) : Except String (TypedExpr Γ) := do
     parseExpr Γ a
   let a (i : Nat) (t : TermSort) : Except String (Expr Γ t) := do asSort t (← arg i)
   let node ← match op, s with
-  | "var", _ => do lookup (← (← field j "name").getStr?) Γ
+  | "var", _ => do
+    match (j.getObjVal? "index").toOption with
+    | some index => lookupIndex (← index.getNat?) Γ
+    | none => lookup (← (← field j "name").getStr?) Γ
+  | "let_par", _ => do
+    let declarations ← (← field j "bindings").getArr?
+    if args.size != declarations.size + 1 then throw "let_par arity mismatch"
+    let ⟨Δ, bindings⟩ ← parseBindings Γ declarations.toList (args.toList.take declarations.size)
+    let body ← asSort s (← parseExpr Δ args[declarations.size]!)
+    return .mk s (.letPar bindings body)
   | "bool_lit", .bool => do pure (.mk .bool (.boolLit (← (← field j "value").getBool?)))
   | "bv_lit", .bv w => do pure (.mk (.bv w) (.bvLit w (← natField j "value")))
   | "rm_lit", .roundingMode => do pure (.mk .roundingMode (.rmLit (← modeOf (← (← field j "value").getStr?))))
@@ -147,6 +166,17 @@ partial def parseExpr (Γ : Ctx) (j : Json) : Except String (TypedExpr Γ) := do
     pure (.mk (.bv w) (.bvBin b w (← a 0 (.bv w)) (← a 1 (.bv w))))
   | _, _ => throw s!"unknown operator {op}"
   return .mk s (← asSort s node)
+
+partial def parseBindings (Γ : Ctx) : List Json → List Json → Except String (Σ Δ, Bindings Γ Δ)
+  | [], [] => return ⟨Γ, .nil⟩
+  | d :: ds, rhs :: rest => do
+    let name ← (← field d "name").getStr?
+    let sort ← sortOf (← field d "sort")
+    let value ← asSort sort (← parseExpr Γ rhs)
+    let ⟨Δ, bindings⟩ ← parseBindings Γ ds rest
+    return ⟨{ name := name, sort := sort } :: Δ, .cons name sort value bindings⟩
+  | _, _ => throw "binding count mismatch"
+end
 
 def parseDecl (j : Json) : Except String Decl := do
   return ⟨← (← field j "name").getStr?, ← sortOf (← field j "sort")⟩

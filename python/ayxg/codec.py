@@ -47,6 +47,8 @@ def typed_expr_roots_dag(
                 node.amount,
                 node.hi,
                 node.lo,
+                node.index,
+                node.bindings,
                 child_indices,
             )
             index = by_signature.get(signature)
@@ -58,10 +60,12 @@ def typed_expr_roots_dag(
                     "sort": node.sort.to_data(),
                     "args": list(child_indices),
                 }
-                for field in ("name", "value", "amount", "hi", "lo"):
+                for field in ("name", "value", "amount", "hi", "lo", "index"):
                     value = getattr(node, field)
                     if value is not None:
                         record[field] = value
+                if node.bindings is not None:
+                    record["bindings"] = [d.to_data() for d in node.bindings]
                 nodes.append(record)
             by_identity[id(node)] = (node, index)
 

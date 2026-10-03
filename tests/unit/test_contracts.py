@@ -47,10 +47,10 @@ class TestSortAndExpressionContracts:
             with pytest.raises(ArtifactError):
                 Declaration(name, TermSort.bool())
 
-    def test_context_rejects_duplicate_names_and_bad_variables(self):
+    def test_context_supports_positional_duplicates_and_rejects_bad_variables(self):
         x8, x16 = Declaration("x", TermSort.bv(8)), Declaration("x", TermSort.bv(16))
-        with pytest.raises(ValueError):
-            QFAbvContext((x8, x16))
+        duplicate = QFAbvContext((x8, x16))
+        duplicate.check_expression(TypedExpr.at(1, x16.sort))
         ctx = QFAbvContext((x8,))
         ctx.check_expression(TypedExpr.var("x", x8.sort))
         for node in [TypedExpr.var("missing", x8.sort), TypedExpr.var("x", x16.sort)]:

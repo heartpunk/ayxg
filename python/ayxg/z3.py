@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from ayxg.expr import BOOL, ArtifactError, UnsupportedTheoryError, Declaration, TermSort, TypedExpr
 
-from collections.abc import Mapping
+from collections.abc import Sequence, Mapping
 from contextlib import contextmanager
 from threading import local
 from typing import Iterator
@@ -116,113 +116,99 @@ def declaration_variables(
 
 def expr_to_z3(
     expression: TypedExpr,
-    variables: Mapping[str, z3.ExprRef],
+    variables: Mapping[str, z3.ExprRef] | Sequence[tuple[str, z3.ExprRef]],
     ctx: z3.Context,
     *,
     memo: dict[int, tuple[TypedExpr, z3.ExprRef]] | None = None,
 ) -> z3.ExprRef:
     """Interpret one typed expression in a fixed Z3 environment."""
 
-    conversion_memo = {} if memo is None else memo
-    stack = [(expression, False)]
-    while stack:
-        node, expanded = stack.pop()
-        key = id(node)
-        if key in conversion_memo:
-            continue
-        if node.op == "var":
-            result = variables.get(node.name)
-            if result is None:
-                raise ArtifactError(
-                    f"expression variable {node.name!r} is not declared"
-                )
-            if sort_from_z3(result.sort()) != node.sort:
-                raise ArtifactError(
-                    f"expression variable {node.name!r} has the wrong sort"
-                )
-        elif node.op == "bool_lit":
-            result = z3.BoolVal(node.value, ctx=ctx)
-        elif node.op == "rm_lit":
+    from ._scoped import interpret
+    if memo is not None and id(expression) in memo and memo[id(expression)][0] is expression:
+        return memo[id(expression)][1]
+    def apply(node: TypedExpr, args: tuple[z3.ExprRef, ...]) -> z3.ExprRef:
+        if node.op == "bool_lit":
+            return z3.BoolVal(node.value, ctx=ctx)
+        if node.op == "rm_lit":
             from .fp_z3 import rounding_mode_to_z3
-            result = rounding_mode_to_z3(node.value, ctx)
-        elif node.op == "bv_lit":
-            result = z3.BitVecVal(node.value, node.sort.width, ctx=ctx)
-        elif not expanded:
-            stack.append((node, True))
-            stack.extend(
-                (argument, False)
-                for argument in reversed(node.args)
-                if id(argument) not in conversion_memo
-            )
-            continue
+            return rounding_mode_to_z3(node.value, ctx)
+        if node.op == "bv_lit":
+            return z3.BitVecVal(node.value, node.sort.width, ctx=ctx)
+        if node.op.startswith("fp_") or node.op in {"bv_to_fp", "sbv_to_fp", "ubv_to_fp"}:
+            from .fp_z3 import fp_node_to_z3
+            result = fp_node_to_z3(node, args, ctx)
+        elif node.op == "const_array":
+            result = z3.K(sort_to_z3(node.sort, ctx).domain(), args[0])
+        elif node.op == "bool_not":
+            result = z3.Not(args[0])
+        elif node.op == "bv_not":
+            result = ~args[0]
+        elif node.op == "bool_and":
+            result = z3.And(args[0], args[1])
+        elif node.op == "bool_or":
+            result = z3.Or(args[0], args[1])
+        elif node.op == "bv_add":
+            result = args[0] + args[1]
+        elif node.op == "bv_sub":
+            result = args[0] - args[1]
+        elif node.op == "bv_mul":
+            result = args[0] * args[1]
+        elif node.op == "bv_udiv":
+            result = z3.UDiv(args[0], args[1])
+        elif node.op == "bv_urem":
+            result = z3.URem(args[0], args[1])
+        elif node.op == "bv_and":
+            result = args[0] & args[1]
+        elif node.op == "bv_or":
+            result = args[0] | args[1]
+        elif node.op == "bv_xor":
+            result = args[0] ^ args[1]
+        elif node.op == "bv_shl":
+            result = args[0] << args[1]
+        elif node.op == "bv_lshr":
+            result = z3.LShR(args[0], args[1])
+        elif node.op == "bv_ashr":
+            result = args[0] >> args[1]
+        elif node.op == "bv_ult":
+            result = z3.ULT(args[0], args[1])
+        elif node.op == "bv_ule":
+            result = z3.ULE(args[0], args[1])
+        elif node.op == "bv_slt":
+            result = args[0] < args[1]
+        elif node.op == "bv_sle":
+            result = args[0] <= args[1]
+        elif node.op == "eq":
+            result = args[0] == args[1]
+        elif node.op == "ite":
+            result = z3.If(args[0], args[1], args[2])
+        elif node.op == "zero_extend":
+            result = z3.ZeroExt(node.amount, args[0])
+        elif node.op == "sign_extend":
+            result = z3.SignExt(node.amount, args[0])
+        elif node.op == "extract":
+            result = z3.Extract(node.hi, node.lo, args[0])
+        elif node.op == "concat":
+            result = z3.Concat(args[0], args[1])
+        elif node.op == "select":
+            result = z3.Select(args[0], args[1])
+        elif node.op == "store":
+            result = z3.Store(args[0], args[1], args[2])
         else:
-            args = tuple(conversion_memo[id(arg)][1] for arg in node.args)
-            if node.op.startswith("fp_") or node.op in {"bv_to_fp", "sbv_to_fp", "ubv_to_fp"}:
-                from .fp_z3 import fp_node_to_z3
-                result = fp_node_to_z3(node, args, ctx)
-            elif node.op == "const_array":
-                result = z3.K(sort_to_z3(node.sort, ctx).domain(), args[0])
-            elif node.op == "bool_not":
-                result = z3.Not(args[0])
-            elif node.op == "bv_not":
-                result = ~args[0]
-            elif node.op == "bool_and":
-                result = z3.And(args[0], args[1])
-            elif node.op == "bool_or":
-                result = z3.Or(args[0], args[1])
-            elif node.op == "bv_add":
-                result = args[0] + args[1]
-            elif node.op == "bv_sub":
-                result = args[0] - args[1]
-            elif node.op == "bv_mul":
-                result = args[0] * args[1]
-            elif node.op == "bv_udiv":
-                result = z3.UDiv(args[0], args[1])
-            elif node.op == "bv_urem":
-                result = z3.URem(args[0], args[1])
-            elif node.op == "bv_and":
-                result = args[0] & args[1]
-            elif node.op == "bv_or":
-                result = args[0] | args[1]
-            elif node.op == "bv_xor":
-                result = args[0] ^ args[1]
-            elif node.op == "bv_shl":
-                result = args[0] << args[1]
-            elif node.op == "bv_lshr":
-                result = z3.LShR(args[0], args[1])
-            elif node.op == "bv_ashr":
-                result = args[0] >> args[1]
-            elif node.op == "bv_ult":
-                result = z3.ULT(args[0], args[1])
-            elif node.op == "bv_ule":
-                result = z3.ULE(args[0], args[1])
-            elif node.op == "bv_slt":
-                result = args[0] < args[1]
-            elif node.op == "bv_sle":
-                result = args[0] <= args[1]
-            elif node.op == "eq":
-                result = args[0] == args[1]
-            elif node.op == "ite":
-                result = z3.If(args[0], args[1], args[2])
-            elif node.op == "zero_extend":
-                result = z3.ZeroExt(node.amount, args[0])
-            elif node.op == "sign_extend":
-                result = z3.SignExt(node.amount, args[0])
-            elif node.op == "extract":
-                result = z3.Extract(node.hi, node.lo, args[0])
-            elif node.op == "concat":
-                result = z3.Concat(args[0], args[1])
-            elif node.op == "select":
-                result = z3.Select(args[0], args[1])
-            elif node.op == "store":
-                result = z3.Store(args[0], args[1], args[2])
-            else:
-                raise ArtifactError(
-                    f"unsupported typed expression operator: {node.op!r}"
-                )
-        conversion_memo[key] = (node, result)
-    return conversion_memo[id(expression)][1]
-
+            raise ArtifactError(
+                f"unsupported typed expression operator: {node.op!r}"
+            )
+        return result
+    environment = tuple(variables.items()) if isinstance(variables, Mapping) else tuple(variables)
+    from .expr import Declaration
+    from .qfabv import QFAbvContext
+    try:
+        QFAbvContext(tuple(Declaration(name, sort_from_z3(value.sort())) for name, value in environment)).check_expression(expression)
+    except ValueError as error:
+        raise ArtifactError(str(error)) from error
+    result, = interpret((expression,), environment, apply, root_memo=memo)
+    if memo is not None:
+        memo[id(expression)] = (expression, result)
+    return result
 
 def _fold(op: str, args: tuple[TypedExpr, ...], identity: bool) -> TypedExpr:
     if not args:

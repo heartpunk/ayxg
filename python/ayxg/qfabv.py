@@ -7,7 +7,7 @@ local structural invariants; the corresponding Lean definitions state laws.
 from __future__ import annotations
 from dataclasses import dataclass
 from typing import Generic, TypeAlias, TypeVar
-from .expr import BOOL, Declaration, TermSort, TypedExpr, variable_sorts
+from .expr import BOOL, Declaration, TermSort, TypedExpr, variable_sorts, free_references
 from .substitution import substitute_exprs
 from .sts import STS
 from .segments import Adapter, Segment
@@ -72,15 +72,11 @@ def decode_sort(raw: TermSort) -> Sort:
 class QFAbvContext(Generic[C]):
     declarations: tuple[Declaration, ...]
 
-    def __post_init__(self) -> None:
-        if len({d.name for d in self.declarations}) != len(self.declarations):
-            raise ValueError("context declaration names must be unique")
-
     def check_expression(self, node: TypedExpr) -> None:
-        sorts = {d.name: d.sort for d in self.declarations}
-        for name, sort in variable_sorts((node,)).items():
-            if sorts.get(name) != sort:
-                raise ValueError(f"variable {name!r} absent or has wrong sort")
+        for ref, sort in free_references((node,)).items():
+            declaration = (self.declarations[ref] if ref < len(self.declarations) else None) if isinstance(ref, int) else next((d for d in self.declarations if d.name == ref), None)
+            if declaration is None or declaration.sort != sort:
+                raise ValueError(f"variable {ref!r} absent or has wrong sort")
 
     def expression(self, node: TypedExpr, sort: S) -> QFAbvExpr[C, S]:
         return QFAbvExpr(self, sort, node)
@@ -99,7 +95,7 @@ class QFAbvExpr(Generic[C, S]):
     def substitute(self, update: QFAbvUpdate[D, C]) -> QFAbvExpr[D, S]:
         if update.target != self.context:
             raise ValueError("substitution output context disagrees")
-        node, = substitute_exprs((self.node,), update.replacements())
+        node, = substitute_exprs((self.node,), update.replacements(), positional=tuple(e.node for e in update.rhs))
         return QFAbvExpr(update.source, self.sort, node)
 
 @dataclass(frozen=True)
@@ -123,19 +119,22 @@ class QFAbvUpdate(Generic[C, D]):
                 raise ValueError("RHS and output variable sorts disagree")
 
     def replacements(self) -> dict[str, TypedExpr]:
-        return {d.name: e.node for d, e in zip(self.target.declarations, self.rhs)}
+        result = {}
+        for d, e in zip(self.target.declarations, self.rhs):
+            result.setdefault(d.name, e.node)
+        return result
 
     @classmethod
     def identity(cls, context: QFAbvContext[C]) -> QFAbvUpdate[C, C]:
         return QFAbvUpdate(context, context, tuple(
-            QFAbvExpr(context, decode_sort(d.sort), TypedExpr.var(d.name, d.sort))
-            for d in context.declarations))
+            QFAbvExpr(context, decode_sort(d.sort), TypedExpr.at(i, d.sort))
+            for i, d in enumerate(context.declarations)))
 
     def compose(self, right: QFAbvUpdate[D, E]) -> QFAbvUpdate[C, E]:
         if self.target != right.source:
             raise ValueError("updates have incompatible middle contexts")
         nodes = substitute_exprs(tuple(e.node for e in right.rhs),
-                                 self.replacements())
+                                 self.replacements(), positional=tuple(e.node for e in self.rhs))
         return QFAbvUpdate(self.source, right.target, tuple(
             QFAbvExpr(self.source, expression.sort, node)
             for expression, node in zip(right.rhs, nodes)))

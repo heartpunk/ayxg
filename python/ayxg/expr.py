@@ -1,6 +1,6 @@
 """WRUH's QF_ABV expression syntax, imported by ast-grep declaration spans.
 
-This syntax is the let-free, positive-width, canonical-literal subset of
+This syntax includes positional variables and parallel bindings, with positive-width, canonical literals from
 Ayxg.QfAbv.Expr. Context membership is provided by ayxg.qfabv.QFAbvExpr.
 """
 from __future__ import annotations
@@ -246,13 +246,26 @@ class TypedExpr:
     amount: int | None = None
     hi: int | None = None
     lo: int | None = None
+    index: int | None = None
+    bindings: tuple[Declaration, ...] | None = None
 
     def __post_init__(self) -> None:
         expected_metadata: set[str]
         if self.op == "var":
-            expected_metadata = {"name"}
-            _identifier(self.name, "expression.name")
+            if self.index is None:
+                expected_metadata = {"name"}
+                _identifier(self.name, "expression.name")
+            else:
+                expected_metadata = {"index"}
+                _nonnegative(self.index, "expression.index")
             self._require_arity(0)
+        elif self.op == "let_par":
+            expected_metadata = {"bindings"}
+            if not isinstance(self.bindings, tuple) or any(not isinstance(d, Declaration) for d in self.bindings):
+                raise ArtifactError("let_par requires a tuple of declarations")
+            self._require_arity(len(self.bindings) + 1)
+            if tuple(a.sort for a in self.args[:-1]) != tuple(d.sort for d in self.bindings) or self.args[-1].sort != self.sort:
+                raise ArtifactError("let_par binding or body sort disagrees")
         elif self.op == "bool_lit":
             expected_metadata = {"value"}
             if self.sort != BOOL or type(self.value) is not bool:
@@ -398,6 +411,8 @@ class TypedExpr:
                 ("amount", self.amount),
                 ("hi", self.hi),
                 ("lo", self.lo),
+                ("index", self.index),
+                ("bindings", self.bindings),
             )
             if item is not None
         }
@@ -418,6 +433,16 @@ class TypedExpr:
     @classmethod
     def var(cls, name: str, sort: TermSort) -> TypedExpr:
         return cls("var", sort, name=name)
+
+    @classmethod
+    def at(cls, index: int, sort: TermSort) -> TypedExpr:
+        """Typed reference to a context slot; zero is the context head."""
+        return cls("var", sort, index=index)
+
+    @classmethod
+    def let_par(cls, bindings: tuple[Declaration, ...], rhs: tuple[TypedExpr, ...], body: TypedExpr) -> TypedExpr:
+        """All RHSs see the old context; body sees bindings prepended in order."""
+        return cls("let_par", body.sort, (*rhs, body), bindings=bindings)
 
     @classmethod
     def bool_lit(cls, value: bool) -> TypedExpr:
@@ -529,10 +554,12 @@ class TypedExpr:
             result: dict[str, Any] = {"op": node.op, "sort": node.sort.to_data()}
             if node.args:
                 result["args"] = [memo[id(arg)] for arg in node.args]
-            for key in ("name", "value", "amount", "hi", "lo"):
+            for key in ("name", "value", "amount", "hi", "lo", "index"):
                 value = getattr(node, key)
                 if value is not None:
                     result[key] = value
+            if node.bindings is not None:
+                result["bindings"] = [d.to_data() for d in node.bindings]
             memo[id(node)] = result
         return memo[id(self)]
 
@@ -548,7 +575,9 @@ class TypedExpr:
         op = _text(obj.get("op"), f"{field}.op")
         expected = {"op", "sort"}
         if op in {"var"}:
-            expected.add("name")
+            expected.add("index" if "index" in obj else "name")
+        elif op == "let_par":
+            expected |= {"args", "bindings"}
         elif op in {"bool_lit", "bv_lit", "rm_lit"}:
             expected.add("value")
         elif op in _EXTEND_OPS:
@@ -571,6 +600,8 @@ class TypedExpr:
                 if "name" in obj
                 else None
             ),
+            index=(_nonnegative(obj["index"], f"{field}.index") if "index" in obj else None),
+            bindings=(tuple(Declaration.from_data(d) for d in _array(obj["bindings"], f"{field}.bindings")) if "bindings" in obj else None),
             value=obj.get("value"),
             amount=(
                 _nonnegative(obj["amount"], f"{field}.amount")
@@ -589,24 +620,46 @@ class TypedExpr:
             ),
         )
 
-def variable_sorts(expressions: Iterable[TypedExpr]) -> dict[str, TermSort]:
-    """Collect variable sorts while expanding each shared DAG node once."""
-
-    result: dict[str, TermSort] = {}
-    stack = list(expressions)
-    visited: set[int] = set()
+def free_references(expressions: Iterable[TypedExpr]) -> dict[str | int, TermSort]:
+    """Validate bound references and collect free names/positions, scope-aware."""
+    result: dict[str | int, TermSort] = {}
+    stack = [(node, ()) for node in expressions]
+    visited: set[tuple[int, tuple[Declaration, ...]]] = set()
     while stack:
-        expression = stack.pop()
-        identity = id(expression)
-        if identity in visited:
+        node, scope = stack.pop()
+        key = (id(node), scope)
+        if key in visited:
             continue
-        visited.add(identity)
-        if expression.op == "var":
-            prior = result.setdefault(_identifier(expression.name, "expression.name"), expression.sort)
-            if prior != expression.sort:
-                raise ArtifactError(
-                    f"inconsistent sort for {expression.name}: "
-                    "variable occurs at conflicting sorts"
-                )
-        stack.extend(expression.args)
+        visited.add(key)
+        if node.op == "var":
+            bound = None
+            if node.index is not None:
+                if node.index < len(scope):
+                    bound = scope[node.index]
+                    ref: str | int = node.index
+                else:
+                    ref = node.index - len(scope)
+            else:
+                assert node.name is not None
+                ref = node.name
+                bound = next((d for d in scope if d.name == ref), None)
+            if bound is not None:
+                if bound.sort != node.sort:
+                    raise ArtifactError("bound variable has wrong sort")
+            elif result.setdefault(ref, node.sort) != node.sort:
+                raise ArtifactError(f"inconsistent sort for {ref!r}")
+        elif node.op == "let_par":
+            assert node.bindings is not None
+            stack.extend((rhs, scope) for rhs in node.args[:-1])
+            stack.append((node.args[-1], node.bindings + scope))
+        else:
+            stack.extend((arg, scope) for arg in node.args)
     return result
+
+
+def variable_sorts(expressions: Iterable[TypedExpr]) -> dict[str, TermSort]:
+    """Free named variables. Positional terms require context-aware validation."""
+    refs = free_references(expressions)
+    if any(isinstance(ref, int) for ref in refs):
+        raise ArtifactError("positional free variables require a declaration context")
+    return {ref: sort for ref, sort in refs.items() if isinstance(ref, str)}

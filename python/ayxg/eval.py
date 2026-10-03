@@ -133,36 +133,10 @@ def _apply(node: TypedExpr, args: tuple[Value, ...], variables: Mapping[str, Val
     raise ArtifactError(f"unsupported expression operator {op!r}")
 
 
-def _eval_nodes(roots: Sequence[TypedExpr], variables: Mapping[str, Value], fp_interpretation: FPInterpretation | None = None) -> tuple[Value, ...]:
-    memo: dict[int, Value] = {}
-    for root in roots:
-        stack = [(root, False)]
-        while stack:
-            node, expanded = stack.pop()
-            key = id(node)
-            if key in memo:
-                continue
-            if node.op in {"ite", "bool_and", "bool_or"}:
-                condition = node.args[0]
-                if id(condition) not in memo:
-                    stack.extend(((node, False), (condition, False)))
-                    continue
-                test = _boolean(memo[id(condition)])
-                if node.op == "bool_and" and not test or node.op == "bool_or" and test:
-                    memo[key] = test
-                    continue
-                chosen = node.args[1 if test or node.op != "ite" else 2]
-                if id(chosen) not in memo:
-                    stack.extend(((node, False), (chosen, False)))
-                    continue
-                memo[key] = memo[id(chosen)]
-                continue
-            if expanded:
-                memo[key] = _apply(node, tuple(memo[id(arg)] for arg in node.args), variables, fp_interpretation)
-            else:
-                stack.append((node, True))
-                stack.extend((arg, False) for arg in reversed(node.args) if id(arg) not in memo)
-    return tuple(memo[id(root)] for root in roots)
+def _eval_nodes(roots: Sequence[TypedExpr], variables: Mapping[str, Value] | Sequence[tuple[str, Value]], fp_interpretation: FPInterpretation | None = None) -> tuple[Value, ...]:
+    from ._scoped import interpret
+    env = tuple(variables.items()) if isinstance(variables, Mapping) else tuple(variables)
+    return interpret(roots, env, lambda node, args: _apply(node, args, {}, fp_interpretation), branch=_boolean)
 
 
 def eval_exprs(expressions: Sequence[QFAbvExpr[C, Sort]],
@@ -170,7 +144,7 @@ def eval_exprs(expressions: Sequence[QFAbvExpr[C, Sort]],
     """Evaluate several roots together, retaining sharing across all of them."""
     if any(expression.context != state.context for expression in expressions):
         raise ValueError("expression and valuation contexts disagree")
-    variables = {d.name: value for d, value in zip(state.context.declarations, state.values)}
+    variables = tuple((d.name, value) for d, value in zip(state.context.declarations, state.values))
     return _eval_nodes(tuple(expression.node for expression in expressions), variables, fp_interpretation)
 
 
