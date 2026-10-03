@@ -6,6 +6,7 @@ This copies source snapshots, never changes AYXG's Lake dependencies or sources.
 from __future__ import annotations
 
 import argparse
+import os
 from pathlib import Path
 import shutil
 import subprocess
@@ -31,6 +32,22 @@ def main() -> None:
     for name in ["Bridge.lean", "lakefile.toml"]:
         shutil.copy2(source / "tests" / "lean_bridge" / name, work / name)
     shutil.copytree(source / "tests" / "lean_bridge" / "Bridge", work / "Bridge", dirs_exist_ok=True)
+    floatlib = os.environ.get("AYXG_FLOATLIB_SOURCE")
+    if not floatlib:
+        raise SystemExit("AYXG_FLOATLIB_SOURCE must be provided by nix develop")
+    pinned_floatlib = Path(floatlib)
+    writable_floatlib = work / ("floatlib-" + pinned_floatlib.name)
+    if not writable_floatlib.exists():
+        shutil.copytree(pinned_floatlib, writable_floatlib, ignore=shutil.ignore_patterns(".lake"))
+        if writable_floatlib.resolve().is_relative_to(Path("/nix/store")):
+            raise SystemExit("refuse to modify immutable Nix source")
+        writable_floatlib.chmod(writable_floatlib.stat().st_mode | 0o200)
+        for item in writable_floatlib.rglob("*"):
+            item.chmod(item.stat().st_mode | 0o200)
+    floatlib = str(writable_floatlib)
+    lake_config = work / "lakefile.toml"
+    lake_config.write_text(lake_config.read_text() + '\n[[require]]\nname = "floatlib"\npath = ' + repr(floatlib).replace("'", '"') + '\n')
+    os.environ["FLOATLIB_BUILD_DIR"] = str(work / ".lake" / "floatlib-build")
     leanpy = work / "leanpy"
     if not leanpy.exists():
         if args.lean_py_source:
@@ -53,6 +70,8 @@ def main() -> None:
     lakefile.write_text(contents)
     # Lake drops now-unused dependency entries on update; keep all paths explicit.
     subprocess.run(["lake", "update"], cwd=work, check=True)
+    from project_bridge_libraries import project_libraries
+    project_libraries(work, writable_floatlib, source / "tests/lean_bridge/ImportOutline.lean")
     subprocess.run(["lake", "build", "Bridge"], cwd=work, check=True)
     print(f"Bridge ready: {work}")
 

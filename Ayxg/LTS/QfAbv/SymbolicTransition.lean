@@ -4,6 +4,8 @@ namespace Ayxg
 namespace LTS
 namespace QfAbv
 
+variable [_root_.Ayxg.QfAbv.FPInterpretation]
+
 open _root_.Ayxg.QfAbv
 
 /-- Flat QF_ABV configuration for the current symbolic transition system.

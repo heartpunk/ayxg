@@ -4,6 +4,8 @@ import Ayxg.QfAbv.Subst
 import Ayxg.LTS.QfAbv.SymbolicTransitionSystem
 
 namespace Bridge.Examples
+
+variable [Ayxg.QfAbv.FPInterpretation]
 open Ayxg Ayxg.QfAbv
 
 def ctx : Ctx := [{ name := "x", sort := .bv 8 }, { name := "y", sort := .bv 8 }]

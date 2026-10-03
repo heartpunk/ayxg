@@ -1,3 +1,5 @@
+import Ayxg.QfAbv.FpTypes
+
 /-
 A compact intrinsically typed QF_ABV expression AST used for the concrete
 executor spine.
@@ -16,6 +18,8 @@ inductive TermSort where
   | bool : TermSort
   | bv : Nat → TermSort
   | array : Nat → Nat → TermSort
+  | fp : FPFormat → TermSort
+  | roundingMode : TermSort
   deriving DecidableEq, Repr
 
 /-- Fixed bit-vector binary operators currently implemented by the compact AST.
@@ -65,6 +69,22 @@ inductive Expr : Ctx → TermSort → Type where
   | bvLit : (w : Nat) → (v : Nat) → Expr Γ (.bv w)
   /-- SMT-style constant array. The element expression is evaluated once, and
       every index maps to that value. -/
+  | rmLit : RoundingMode → Expr Γ .roundingMode
+  | fpFromBits : (f : FPFormat) → Expr Γ (.bv f.bitWidth) → Expr Γ (.fp f)
+  | fpToBits : (f : FPFormat) → Expr Γ (.fp f) → Expr Γ (.bv f.bitWidth)
+  | fpUnary : FpUnaryOp → (f : FPFormat) → Expr Γ (.fp f) → Expr Γ (.fp f)
+  | fpBinary : FpBinaryOp → (f : FPFormat) → Expr Γ (.fp f) → Expr Γ (.fp f) → Expr Γ (.fp f)
+  | fpRounded : FpRoundedOp → (f : FPFormat) → Expr Γ .roundingMode → Expr Γ (.fp f) → Expr Γ (.fp f) → Expr Γ (.fp f)
+  | fpFma : (f : FPFormat) → Expr Γ .roundingMode → Expr Γ (.fp f) → Expr Γ (.fp f) → Expr Γ (.fp f) → Expr Γ (.fp f)
+  | fpSqrt : (f : FPFormat) → Expr Γ .roundingMode → Expr Γ (.fp f) → Expr Γ (.fp f)
+  | fpRoundToIntegral : (f : FPFormat) → Expr Γ .roundingMode → Expr Γ (.fp f) → Expr Γ (.fp f)
+  | fpCompare : FpCompareOp → (f : FPFormat) → Expr Γ (.fp f) → Expr Γ (.fp f) → Expr Γ .bool
+  | fpClassify : FpClassifyOp → (f : FPFormat) → Expr Γ (.fp f) → Expr Γ .bool
+  | fpToBv : (signed : Bool) → (f : FPFormat) → (width : Nat) → Expr Γ .roundingMode → Expr Γ (.fp f) → Expr Γ (.bv width)
+  | fpFromBv : (signed : Bool) → (width : Nat) → (f : FPFormat) → Expr Γ .roundingMode → Expr Γ (.bv width) → Expr Γ (.fp f)
+  | fpCast : (src dst : FPFormat) → Expr Γ .roundingMode → Expr Γ (.fp src) → Expr Γ (.fp dst)
+  | eqFp : (f : FPFormat) → Expr Γ (.fp f) → Expr Γ (.fp f) → Expr Γ .bool
+  | eqRoundingMode : Expr Γ .roundingMode → Expr Γ .roundingMode → Expr Γ .bool
   | constArray : (iw vw : Nat) → Expr Γ (.bv vw) → Expr Γ (.array iw vw)
   | boolNot : Expr Γ .bool → Expr Γ .bool
   | boolAnd : Expr Γ .bool → Expr Γ .bool → Expr Γ .bool

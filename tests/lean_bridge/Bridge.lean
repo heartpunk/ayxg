@@ -4,12 +4,32 @@ import Ayxg.QfAbv.STS
 open LeanPy Lean Ayxg.QfAbv
 namespace Bridge
 
+/-- Test-only, explicitly chosen interpretation: canonical NaN bits, zero for
+invalid casts and left operand sign for opposite-zero ties. Not a library default. -/
+local instance fixtureFPInterpretation : FPInterpretation where
+  nanBits _ x _ := x.rawBits
+  nanBits_isNaN _ x h := by rw [FPValue.rawBits_roundtrip]; exact h
+  invalidToBV _ _ _ _ _ := 0
+  zeroTie _ _ leftNegative := leftNegative
+
+def modeOf : String → Except String RoundingMode
+  | "RNE" => pure .rne | "RNA" => pure .rna | "RTP" => pure .rtp
+  | "RTN" => pure .rtn | "RTZ" => pure .rtz | _ => throw "invalid rounding mode"
+def modeString : RoundingMode → String
+  | .rne => "RNE" | .rna => "RNA" | .rtp => "RTP" | .rtn => "RTN" | .rtz => "RTZ"
+
 def field (j : Json) (key : String) : Except String Json := j.getObjVal? key
 def natField (j : Json) (key : String) : Except String Nat := do (← field j key).getNat?
 def sortOf (j : Json) : Except String TermSort := do
   match ← (← field j "kind").getStr? with
   | "bool" => return .bool
   | "bv" => return .bv (← natField j "width")
+  | "rm" => return .roundingMode
+  | "fp" =>
+    let eb ← natField j "exponent_bits"
+    let sb ← natField j "significand_bits"
+    if h : 2 ≤ eb ∧ 2 ≤ sb then return .fp ⟨eb, sb, h.1, h.2⟩
+    else throw "invalid FP format"
   | "array" => return .array (← natField j "index_width") (← natField j "value_width")
   | s => throw s!"unknown sort {s}"
 def asSort {Γ : Ctx} (s : TermSort) : TypedExpr Γ → Except String (Expr Γ s)
@@ -39,6 +59,48 @@ partial def parseExpr (Γ : Ctx) (j : Json) : Except String (TypedExpr Γ) := do
   | "var", _ => do lookup (← (← field j "name").getStr?) Γ
   | "bool_lit", .bool => do pure (.mk .bool (.boolLit (← (← field j "value").getBool?)))
   | "bv_lit", .bv w => do pure (.mk (.bv w) (.bvLit w (← natField j "value")))
+  | "rm_lit", .roundingMode => do pure (.mk .roundingMode (.rmLit (← modeOf (← (← field j "value").getStr?))))
+  | "bv_to_fp", .fp f => do pure (.mk (.fp f) (.fpFromBits f (← a 0 (.bv f.bitWidth))))
+  | "fp_abs", .fp f | "fp_neg", .fp f => do
+    pure (.mk (.fp f) (.fpUnary (if op == "fp_abs" then .abs else .neg) f (← a 0 (.fp f))))
+  | "fp_rem", .fp f | "fp_min", .fp f | "fp_max", .fp f => do
+    let o := if op == "fp_rem" then FpBinaryOp.rem else if op == "fp_min" then .min else .max
+    pure (.mk (.fp f) (.fpBinary o f (← a 0 (.fp f)) (← a 1 (.fp f))))
+  | "fp_add", .fp f | "fp_sub", .fp f | "fp_mul", .fp f | "fp_div", .fp f => do
+    let o := if op == "fp_add" then FpRoundedOp.add else if op == "fp_sub" then .sub else if op == "fp_mul" then .mul else .div
+    pure (.mk (.fp f) (.fpRounded o f (← a 0 .roundingMode) (← a 1 (.fp f)) (← a 2 (.fp f))))
+  | "fp_fma", .fp f => do pure (.mk (.fp f) (.fpFma f (← a 0 .roundingMode) (← a 1 (.fp f)) (← a 2 (.fp f)) (← a 3 (.fp f))))
+  | "fp_sqrt", .fp f => do pure (.mk (.fp f) (.fpSqrt f (← a 0 .roundingMode) (← a 1 (.fp f))))
+  | "fp_round_to_integral", .fp f => do pure (.mk (.fp f) (.fpRoundToIntegral f (← a 0 .roundingMode) (← a 1 (.fp f))))
+  | "fp_to_fp", .fp dst => do
+    let .mk (.fp src) e ← arg 1 | throw "cast expects FP"
+    pure (.mk (.fp dst) (.fpCast src dst (← a 0 .roundingMode) e))
+  | "sbv_to_fp", .fp f | "ubv_to_fp", .fp f => do
+    let .mk (.bv w) e ← arg 1 | throw "conversion expects BV"
+    pure (.mk (.fp f) (.fpFromBv (op == "sbv_to_fp") w f (← a 0 .roundingMode) e))
+  | "fp_to_sbv", .bv w | "fp_to_ubv", .bv w => do
+    let .mk (.fp f) e ← arg 1 | throw "conversion expects FP"
+    pure (.mk (.bv w) (.fpToBv (op == "fp_to_sbv") f w (← a 0 .roundingMode) e))
+  | "fp_to_ieee_bv", .bv _ => do
+    let .mk (.fp f) e ← arg 0 | throw "bit transport expects FP"
+    pure (.mk (.bv f.bitWidth) (.fpToBits f e))
+  | "fp_eq", .bool | "fp_lt", .bool | "fp_le", .bool | "fp_gt", .bool | "fp_ge", .bool => do
+    let .mk (.fp f) e ← arg 0 | throw "comparison expects FP"
+    let o := if op == "fp_eq" then FpCompareOp.eq else if op == "fp_lt" then .lt else if op == "fp_le" then .le else if op == "fp_gt" then .gt else .ge
+    pure (.mk .bool (.fpCompare o f e (← a 1 (.fp f))))
+  | "fp_is_normal", .bool | "fp_is_subnormal", .bool | "fp_is_zero", .bool | "fp_is_infinite", .bool | "fp_is_nan", .bool | "fp_is_negative", .bool | "fp_is_positive", .bool => do
+    let .mk (.fp f) e ← arg 0 | throw "classification expects FP"
+    let o := if op == "fp_is_normal" then FpClassifyOp.normal else if op == "fp_is_subnormal" then .subnormal else if op == "fp_is_zero" then .zero else if op == "fp_is_infinite" then .infinite else if op == "fp_is_nan" then .nan else if op == "fp_is_negative" then .negative else .positive
+    pure (.mk .bool (.fpClassify o f e))
+  | "fp_construct", .fp f => do
+    let sign ← a 0 (.bv 1)
+    let exp ← a 1 (.bv f.exponentBits)
+    let frac ← a 2 (.bv (f.significandBits - 1))
+    let bits := Expr.concat 1 (f.exponentBits + (f.significandBits - 1)) sign
+      (.concat f.exponentBits (f.significandBits - 1) exp frac)
+    have h : 1 + (f.exponentBits + (f.significandBits - 1)) = f.bitWidth := by
+      unfold FPFormat.bitWidth; have := f.significand_ge_two; omega
+    pure (.mk (.fp f) (.fpFromBits f (h ▸ bits)))
   | "const_array", .array iw vw => do pure (.mk (.array iw vw) (.constArray iw vw (← a 0 (.bv vw))))
   | "bool_not", .bool => do pure (.mk .bool (.boolNot (← a 0 .bool)))
   | "bool_and", .bool => do pure (.mk .bool (.boolAnd (← a 0 .bool) (← a 1 .bool)))
@@ -68,6 +130,8 @@ partial def parseExpr (Γ : Ctx) (j : Json) : Except String (TypedExpr Γ) := do
     pure (.mk (.array iw vw) (.store iw vw (← a 0 (.array iw vw)) (← a 1 (.bv iw)) (← a 2 (.bv vw))))
   | "eq", .bool => do
     match ← arg 0 with
+    | .mk (.fp f) l => pure (.mk .bool (.eqFp f l (← a 1 (.fp f))))
+    | .mk .roundingMode l => pure (.mk .bool (.eqRoundingMode l (← a 1 .roundingMode)))
     | .mk .bool l => pure (.mk .bool (.eqBool l (← a 1 .bool)))
     | .mk (.bv w) l => pure (.mk .bool (.eqBv w l (← a 1 (.bv w))))
     | .mk (.array iw vw) l => pure (.mk .bool (.eqArray iw vw l (← a 1 (.array iw vw))))
@@ -88,6 +152,8 @@ def parseDecl (j : Json) : Except String Decl := do
   return ⟨← (← field j "name").getStr?, ← sortOf (← field j "sort")⟩
 def parseValue (s : TermSort) (j : Json) : Except String (Denote s) := do
   match s with
+  | .fp f => return FPValue.ofBits f (BitVec.ofNat f.bitWidth (← j.getNat?))
+  | .roundingMode => modeOf (← j.getStr?)
   | .bool => j.getBool?
   | .bv w => return BitVec.ofNat w (← j.getNat?)
   | .array iw vw =>
@@ -106,6 +172,8 @@ def parseEnv : (Γ : Ctx) → List Json → Except String (Env Γ)
   | _, _ => throw "valuation length mismatch"
 def result (s : TermSort) (v : Denote s) : Except String Json := do
   let (kind, value) ← match s with
+    | .fp _ => pure ("fp", toJson v.model.toNatBits)
+    | .roundingMode => pure ("rm", toJson (modeString v))
     | .bool => pure ("bool", toJson v)
     | .bv _ => pure ("bv", toJson v.toNat)
     | .array iw _ => do

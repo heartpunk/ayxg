@@ -5,6 +5,8 @@ namespace Ayxg
 namespace LTS
 namespace QfAbv
 
+variable [_root_.Ayxg.QfAbv.FPInterpretation]
+
 open _root_.Ayxg.QfAbv
 
 /-- Source-keyed symbolic transition system over a typed QF_ABV environment.

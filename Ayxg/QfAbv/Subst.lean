@@ -3,6 +3,8 @@ import Ayxg.QfAbv.Eval
 namespace Ayxg
 namespace QfAbv
 
+variable [FPInterpretation]
+
 /-- Typed expression substitution from a source context to a destination context.
 
 `Subst Γsrc Γdst` maps every variable in `Γsrc` to an expression over `Γdst`
@@ -55,6 +57,22 @@ def Expr.rename {Γsrc Γdst : Ctx} (ρ : Renaming Γsrc Γdst) :
   | _, .var x => .var (ρ x)
   | _, .boolLit b => .boolLit b
   | _, .bvLit w v => .bvLit w v
+  | _, .rmLit mode => .rmLit mode
+  | _, .fpFromBits f e => .fpFromBits f (Expr.rename ρ e)
+  | _, .fpToBits f e => .fpToBits f (Expr.rename ρ e)
+  | _, .fpUnary op f e => .fpUnary op f (Expr.rename ρ e)
+  | _, .fpBinary op f a b => .fpBinary op f (Expr.rename ρ a) (Expr.rename ρ b)
+  | _, .fpRounded op f rm a b => .fpRounded op f (Expr.rename ρ rm) (Expr.rename ρ a) (Expr.rename ρ b)
+  | _, .fpFma f rm a b c => .fpFma f (Expr.rename ρ rm) (Expr.rename ρ a) (Expr.rename ρ b) (Expr.rename ρ c)
+  | _, .fpSqrt f rm e => .fpSqrt f (Expr.rename ρ rm) (Expr.rename ρ e)
+  | _, .fpRoundToIntegral f rm e => .fpRoundToIntegral f (Expr.rename ρ rm) (Expr.rename ρ e)
+  | _, .fpCompare op f a b => .fpCompare op f (Expr.rename ρ a) (Expr.rename ρ b)
+  | _, .fpClassify op f e => .fpClassify op f (Expr.rename ρ e)
+  | _, .fpToBv signed f width rm e => .fpToBv signed f width (Expr.rename ρ rm) (Expr.rename ρ e)
+  | _, .fpFromBv signed width f rm e => .fpFromBv signed width f (Expr.rename ρ rm) (Expr.rename ρ e)
+  | _, .fpCast src dst rm e => .fpCast src dst (Expr.rename ρ rm) (Expr.rename ρ e)
+  | _, .eqFp f a b => .eqFp f (Expr.rename ρ a) (Expr.rename ρ b)
+  | _, .eqRoundingMode a b => .eqRoundingMode (Expr.rename ρ a) (Expr.rename ρ b)
   | _, .constArray iw vw value => .constArray iw vw (Expr.rename ρ value)
   | _, .boolNot p => .boolNot (Expr.rename ρ p)
   | _, .boolAnd p q => .boolAnd (Expr.rename ρ p) (Expr.rename ρ q)
@@ -121,6 +139,22 @@ theorem Expr.eval_rename {Γsrc Γdst : Ctx} (ρ : Renaming Γsrc Γdst)
   | _, .var x => hρ x
   | _, .boolLit _ => rfl
   | _, .bvLit _ _ => rfl
+  | _, .rmLit mode => rfl
+  | _, .fpFromBits f e => by simp [Expr.rename, Eval.eval, Expr.eval_rename ρ envSrc envDst hρ e] <;> rfl
+  | _, .fpToBits f e => by simp [Expr.rename, Eval.eval, Expr.eval_rename ρ envSrc envDst hρ e] <;> rfl
+  | _, .fpUnary op f e => by simp [Expr.rename, Eval.eval, Expr.eval_rename ρ envSrc envDst hρ e] <;> rfl
+  | _, .fpBinary op f a b => by simp [Expr.rename, Eval.eval, Expr.eval_rename ρ envSrc envDst hρ a, Expr.eval_rename ρ envSrc envDst hρ b]
+  | _, .fpRounded op f rm a b => by simp [Expr.rename, Eval.eval, Expr.eval_rename ρ envSrc envDst hρ rm, Expr.eval_rename ρ envSrc envDst hρ a, Expr.eval_rename ρ envSrc envDst hρ b]
+  | _, .fpFma f rm a b c => by simp [Expr.rename, Eval.eval, Expr.eval_rename ρ envSrc envDst hρ rm, Expr.eval_rename ρ envSrc envDst hρ a, Expr.eval_rename ρ envSrc envDst hρ b, Expr.eval_rename ρ envSrc envDst hρ c]
+  | _, .fpSqrt f rm e => by simp [Expr.rename, Eval.eval, Expr.eval_rename ρ envSrc envDst hρ rm, Expr.eval_rename ρ envSrc envDst hρ e] <;> rfl
+  | _, .fpRoundToIntegral f rm e => by simp [Expr.rename, Eval.eval, Expr.eval_rename ρ envSrc envDst hρ rm, Expr.eval_rename ρ envSrc envDst hρ e] <;> rfl
+  | _, .fpCompare op f a b => by simp [Expr.rename, Eval.eval, Expr.eval_rename ρ envSrc envDst hρ a, Expr.eval_rename ρ envSrc envDst hρ b]
+  | _, .fpClassify op f e => by simp [Expr.rename, Eval.eval, Expr.eval_rename ρ envSrc envDst hρ e] <;> rfl
+  | _, .fpToBv signed f width rm e => by simp [Expr.rename, Eval.eval, Expr.eval_rename ρ envSrc envDst hρ rm, Expr.eval_rename ρ envSrc envDst hρ e] <;> rfl
+  | _, .fpFromBv signed width f rm e => by simp [Expr.rename, Eval.eval, Expr.eval_rename ρ envSrc envDst hρ rm, Expr.eval_rename ρ envSrc envDst hρ e] <;> rfl
+  | _, .fpCast src dst rm e => by simp [Expr.rename, Eval.eval, Expr.eval_rename ρ envSrc envDst hρ rm, Expr.eval_rename ρ envSrc envDst hρ e] <;> rfl
+  | _, .eqFp f a b => by simp [Expr.rename, Eval.eval, Expr.eval_rename ρ envSrc envDst hρ a, Expr.eval_rename ρ envSrc envDst hρ b]
+  | _, .eqRoundingMode a b => by simp [Expr.rename, Eval.eval, Expr.eval_rename ρ envSrc envDst hρ a, Expr.eval_rename ρ envSrc envDst hρ b]
   | _, .constArray _ _ value => by
       simp [Expr.rename, Eval.eval, Expr.eval_rename ρ envSrc envDst hρ value]
   | _, .boolNot p => by simp [Expr.rename, Eval.eval, Expr.eval_rename ρ envSrc envDst hρ p]
@@ -132,14 +166,14 @@ theorem Expr.eval_rename {Γsrc Γdst : Ctx} (ρ : Renaming Γsrc Γdst)
         Expr.eval_rename ρ envSrc envDst hρ q]
   | _, .ite c t e => by
       simp [Expr.rename, Eval.eval, Expr.eval_rename ρ envSrc envDst hρ c,
-        Expr.eval_rename ρ envSrc envDst hρ t, Expr.eval_rename ρ envSrc envDst hρ e]
+        Expr.eval_rename ρ envSrc envDst hρ t, Expr.eval_rename ρ envSrc envDst hρ e] <;> rfl
   | _, .bvBin _ _ a b => by
       simp [Expr.rename, Eval.eval, Expr.eval_rename ρ envSrc envDst hρ a,
         Expr.eval_rename ρ envSrc envDst hρ b]
-  | _, .bvNot _ e => by simp [Expr.rename, Eval.eval, Expr.eval_rename ρ envSrc envDst hρ e]
-  | _, .zeroExt _ _ e => by simp [Expr.rename, Eval.eval, Expr.eval_rename ρ envSrc envDst hρ e]
-  | _, .signExt _ _ e => by simp [Expr.rename, Eval.eval, Expr.eval_rename ρ envSrc envDst hρ e]
-  | _, .extract _ e => by simp [Expr.rename, Eval.eval, Expr.eval_rename ρ envSrc envDst hρ e]
+  | _, .bvNot _ e => by simp [Expr.rename, Eval.eval, Expr.eval_rename ρ envSrc envDst hρ e] <;> rfl
+  | _, .zeroExt _ _ e => by simp [Expr.rename, Eval.eval, Expr.eval_rename ρ envSrc envDst hρ e] <;> rfl
+  | _, .signExt _ _ e => by simp [Expr.rename, Eval.eval, Expr.eval_rename ρ envSrc envDst hρ e] <;> rfl
+  | _, .extract _ e => by simp [Expr.rename, Eval.eval, Expr.eval_rename ρ envSrc envDst hρ e] <;> rfl
   | _, .concat _ _ l r => by
       simp [Expr.rename, Eval.eval, Expr.eval_rename ρ envSrc envDst hρ l,
         Expr.eval_rename ρ envSrc envDst hρ r]
@@ -238,6 +272,22 @@ def Expr.subst {Γsrc Γdst : Ctx} (σ : Subst Γsrc Γdst) :
   | _, .var x => σ x
   | _, .boolLit b => .boolLit b
   | _, .bvLit w v => .bvLit w v
+  | _, .rmLit mode => .rmLit mode
+  | _, .fpFromBits f e => .fpFromBits f (Expr.subst σ e)
+  | _, .fpToBits f e => .fpToBits f (Expr.subst σ e)
+  | _, .fpUnary op f e => .fpUnary op f (Expr.subst σ e)
+  | _, .fpBinary op f a b => .fpBinary op f (Expr.subst σ a) (Expr.subst σ b)
+  | _, .fpRounded op f rm a b => .fpRounded op f (Expr.subst σ rm) (Expr.subst σ a) (Expr.subst σ b)
+  | _, .fpFma f rm a b c => .fpFma f (Expr.subst σ rm) (Expr.subst σ a) (Expr.subst σ b) (Expr.subst σ c)
+  | _, .fpSqrt f rm e => .fpSqrt f (Expr.subst σ rm) (Expr.subst σ e)
+  | _, .fpRoundToIntegral f rm e => .fpRoundToIntegral f (Expr.subst σ rm) (Expr.subst σ e)
+  | _, .fpCompare op f a b => .fpCompare op f (Expr.subst σ a) (Expr.subst σ b)
+  | _, .fpClassify op f e => .fpClassify op f (Expr.subst σ e)
+  | _, .fpToBv signed f width rm e => .fpToBv signed f width (Expr.subst σ rm) (Expr.subst σ e)
+  | _, .fpFromBv signed width f rm e => .fpFromBv signed width f (Expr.subst σ rm) (Expr.subst σ e)
+  | _, .fpCast src dst rm e => .fpCast src dst (Expr.subst σ rm) (Expr.subst σ e)
+  | _, .eqFp f a b => .eqFp f (Expr.subst σ a) (Expr.subst σ b)
+  | _, .eqRoundingMode a b => .eqRoundingMode (Expr.subst σ a) (Expr.subst σ b)
   | _, .constArray iw vw value => .constArray iw vw (Expr.subst σ value)
   | _, .boolNot p => .boolNot (Expr.subst σ p)
   | _, .boolAnd p q => .boolAnd (Expr.subst σ p) (Expr.subst σ q)
@@ -297,6 +347,22 @@ theorem Expr.eval_subst {Γsrc Γdst : Ctx} (σ : Subst Γsrc Γdst) (env : Env 
   | _, .var x => (Subst.eval_lookup σ env x).symm
   | _, .boolLit _ => rfl
   | _, .bvLit _ _ => rfl
+  | _, .rmLit mode => rfl
+  | _, .fpFromBits f e => by simp [Expr.subst, Eval.eval, Expr.eval_subst σ env e] <;> rfl
+  | _, .fpToBits f e => by simp [Expr.subst, Eval.eval, Expr.eval_subst σ env e] <;> rfl
+  | _, .fpUnary op f e => by simp [Expr.subst, Eval.eval, Expr.eval_subst σ env e] <;> rfl
+  | _, .fpBinary op f a b => by simp [Expr.subst, Eval.eval, Expr.eval_subst σ env a, Expr.eval_subst σ env b]
+  | _, .fpRounded op f rm a b => by simp [Expr.subst, Eval.eval, Expr.eval_subst σ env rm, Expr.eval_subst σ env a, Expr.eval_subst σ env b]
+  | _, .fpFma f rm a b c => by simp [Expr.subst, Eval.eval, Expr.eval_subst σ env rm, Expr.eval_subst σ env a, Expr.eval_subst σ env b, Expr.eval_subst σ env c]
+  | _, .fpSqrt f rm e => by simp [Expr.subst, Eval.eval, Expr.eval_subst σ env rm, Expr.eval_subst σ env e] <;> rfl
+  | _, .fpRoundToIntegral f rm e => by simp [Expr.subst, Eval.eval, Expr.eval_subst σ env rm, Expr.eval_subst σ env e] <;> rfl
+  | _, .fpCompare op f a b => by simp [Expr.subst, Eval.eval, Expr.eval_subst σ env a, Expr.eval_subst σ env b]
+  | _, .fpClassify op f e => by simp [Expr.subst, Eval.eval, Expr.eval_subst σ env e] <;> rfl
+  | _, .fpToBv signed f width rm e => by simp [Expr.subst, Eval.eval, Expr.eval_subst σ env rm, Expr.eval_subst σ env e] <;> rfl
+  | _, .fpFromBv signed width f rm e => by simp [Expr.subst, Eval.eval, Expr.eval_subst σ env rm, Expr.eval_subst σ env e] <;> rfl
+  | _, .fpCast src dst rm e => by simp [Expr.subst, Eval.eval, Expr.eval_subst σ env rm, Expr.eval_subst σ env e] <;> rfl
+  | _, .eqFp f a b => by simp [Expr.subst, Eval.eval, Expr.eval_subst σ env a, Expr.eval_subst σ env b]
+  | _, .eqRoundingMode a b => by simp [Expr.subst, Eval.eval, Expr.eval_subst σ env a, Expr.eval_subst σ env b]
   | _, .constArray _ _ value => by
       simp [Expr.subst, Eval.eval, Expr.eval_subst σ env value]
   | _, .boolNot p => by simp [Expr.subst, Eval.eval, Expr.eval_subst σ env p]
@@ -306,13 +372,13 @@ theorem Expr.eval_subst {Γsrc Γdst : Ctx} (σ : Subst Γsrc Γdst) (env : Env 
       simp [Expr.subst, Eval.eval, Expr.eval_subst σ env p, Expr.eval_subst σ env q]
   | _, .ite c t e => by
       simp [Expr.subst, Eval.eval, Expr.eval_subst σ env c, Expr.eval_subst σ env t,
-        Expr.eval_subst σ env e]
+        Expr.eval_subst σ env e] <;> rfl
   | _, .bvBin _ _ a b => by
       simp [Expr.subst, Eval.eval, Expr.eval_subst σ env a, Expr.eval_subst σ env b]
-  | _, .bvNot _ e => by simp [Expr.subst, Eval.eval, Expr.eval_subst σ env e]
-  | _, .zeroExt _ _ e => by simp [Expr.subst, Eval.eval, Expr.eval_subst σ env e]
-  | _, .signExt _ _ e => by simp [Expr.subst, Eval.eval, Expr.eval_subst σ env e]
-  | _, .extract _ e => by simp [Expr.subst, Eval.eval, Expr.eval_subst σ env e]
+  | _, .bvNot _ e => by simp [Expr.subst, Eval.eval, Expr.eval_subst σ env e] <;> rfl
+  | _, .zeroExt _ _ e => by simp [Expr.subst, Eval.eval, Expr.eval_subst σ env e] <;> rfl
+  | _, .signExt _ _ e => by simp [Expr.subst, Eval.eval, Expr.eval_subst σ env e] <;> rfl
+  | _, .extract _ e => by simp [Expr.subst, Eval.eval, Expr.eval_subst σ env e] <;> rfl
   | _, .concat _ _ l r => by
       simp [Expr.subst, Eval.eval, Expr.eval_subst σ env l, Expr.eval_subst σ env r]
   | _, .select _ _ mem key => by

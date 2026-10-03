@@ -1,0 +1,7 @@
+{
+  "upstream_repo": "https://github.com/lean-dojo/FloatLib",
+  "upstream_revision": "1e83f09ed8c41a953cf8f93d26c210778177b94a",
+  "scoped_committed_revision": "222236f04b51cfbf170bd4894542c9ac97436b15",
+  "patch_sha256": "376b29d7a6d77a64d040af1b21b6634f5242f662b7f2d4ce8339ffbae714e56d",
+  "transport": "immutable upstream flake source plus scoped patch; no remote publication required"
+}

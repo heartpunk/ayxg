@@ -3,6 +3,8 @@ import Ayxg.QfAbv.SymbolicLabel
 
 namespace Ayxg.QfAbv
 
+variable [FPInterpretation]
+
 /-- Heterogeneous guarded state transformer, also used for segment adapters. -/
 structure QFAbvStep (Γin Γout : Ctx) where
   guard : Expr Γin .bool

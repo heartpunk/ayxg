@@ -18,6 +18,23 @@
         "type": "github"
       }
     },
+    "floatlib": {
+      "flake": false,
+      "locked": {
+        "lastModified": 1790782245,
+        "narHash": "sha256-NNykGEact1Js3kKrPbO67mHvcIOlFvNJafSSQKW3exA=",
+        "owner": "lean-dojo",
+        "repo": "FloatLib",
+        "rev": "1e83f09ed8c41a953cf8f93d26c210778177b94a",
+        "type": "github"
+      },
+      "original": {
+        "owner": "lean-dojo",
+        "repo": "FloatLib",
+        "rev": "1e83f09ed8c41a953cf8f93d26c210778177b94a",
+        "type": "github"
+      }
+    },
     "lean4-nix": {
       "inputs": {
         "flake-parts": "flake-parts",
@@ -73,6 +90,7 @@
     },
     "root": {
       "inputs": {
+        "floatlib": "floatlib",
         "lean4-nix": "lean4-nix",
         "nixpkgs": "nixpkgs"
       }

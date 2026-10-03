@@ -11,9 +11,9 @@ from collections.abc import Mapping, Sequence
 from typing import TypeVar, overload
 
 from .expr import ArtifactError, TypedExpr
-from .fp import FPInterpretation
+from .fp import FPInterpretation, FPValue, RoundingMode
 from .qfabv import (
-    ArraySort, BoolSort, BVSort, QFAbvArrayValue, QFAbvExpr, QFAbvStep,
+    ArraySort, BoolSort, BVSort, FPSort, RoundingModeSort, QFAbvArrayValue, QFAbvExpr, QFAbvStep,
     QFAbvUpdate, QFAbvValuation, Sort, Value,
 )
 
@@ -180,6 +180,10 @@ def eval_expr(expression: QFAbvExpr[C, BoolSort], state: QFAbvValuation[C], fp_i
 def eval_expr(expression: QFAbvExpr[C, BVSort], state: QFAbvValuation[C], fp_interpretation: FPInterpretation | None = None) -> int: ...
 @overload
 def eval_expr(expression: QFAbvExpr[C, ArraySort], state: QFAbvValuation[C], fp_interpretation: FPInterpretation | None = None) -> QFAbvArrayValue: ...
+@overload
+def eval_expr(expression: QFAbvExpr[C, FPSort], state: QFAbvValuation[C], fp_interpretation: FPInterpretation | None = None) -> FPValue: ...
+@overload
+def eval_expr(expression: QFAbvExpr[C, RoundingModeSort], state: QFAbvValuation[C], fp_interpretation: FPInterpretation | None = None) -> RoundingMode: ...
 @overload
 def eval_expr(expression: QFAbvExpr[C, Sort], state: QFAbvValuation[C], fp_interpretation: FPInterpretation | None = None) -> Value: ...
 def eval_expr(expression: QFAbvExpr[C, Sort], state: QFAbvValuation[C], fp_interpretation: FPInterpretation | None = None) -> Value:

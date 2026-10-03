@@ -3,6 +3,8 @@ import Ayxg.QfAbv.Update
 namespace Ayxg
 namespace QfAbv
 
+variable [_root_.Ayxg.QfAbv.FPInterpretation]
+
 /-- Symbolic guard/update payload over a QF_ABV environment.
 
 This is the payload language used by the current QF_ABV LTS bridge: the guard

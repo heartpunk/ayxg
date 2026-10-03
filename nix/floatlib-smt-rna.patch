@@ -1,0 +1,245 @@
+diff --git a/FloatLib/Floats/Formats/BinaryInterchange/SMT/Proof.lean b/FloatLib/Floats/Formats/BinaryInterchange/SMT/Proof.lean
+new file mode 100644
+index 0000000000..34fb194f63
+--- /dev/null
++++ b/FloatLib/Floats/Formats/BinaryInterchange/SMT/Proof.lean
+@@ -0,0 +1,65 @@
++/- Refinement facts for the five-mode SMT extension. -/
++module
++public import FloatLib.Floats.Formats.BinaryInterchange.SMT.Rounding
++@[expose] public section
++namespace FloatLib.Floats.Formats.BinaryInterchange.Model.SMT
++open FloatLib.Numerics
++
++/-- RNA quotient rounding chooses the adjacent integer with least distance;
++exact half-way cases always choose the larger magnitude. -/
++theorem roundQuot_rna (sign : Bool) (entropy num den : Nat) (hden : den ≠ 0) :
++    Policy.roundQuot .nearestAway sign entropy num den =
++      if 2 * (num % den) < den then num / den else num / den + 1 := by
++  by_cases hzero : num % den = 0
++  · simp [Policy.roundQuot, hzero, Nat.pos_of_ne_zero hden]
++  · simp [Policy.roundQuot, hzero]
++
++
++/-- The halfway boundary selects away from zero for both operand signs. -/
++theorem roundQuot_rna_tie (sign : Bool) (entropy num den : Nat)
++    (hden : den ≠ 0) (htie : 2 * (num % den) = den) :
++    Policy.roundQuot .nearestAway sign entropy num den = num / den + 1 := by
++  rw [roundQuot_rna sign entropy num den hden]
++  simp [htie]
++
++/-- The selected adjacent integer is nearest; strict ties select the upper
++magnitude. This is the arithmetic condition applied at every discarded-bit
++boundary of the RNA quantization kernel. -/
++theorem roundQuot_rna_adjacent (sign : Bool) (entropy num den : Nat) (hden : den ≠ 0) :
++    let q := num / den
++    let r := num % den
++    let result := Policy.roundQuot .nearestAway sign entropy num den
++    (result = q ∧ r < den - r) ∨ (result = q + 1 ∧ den - r ≤ r) := by
++  dsimp
++  rw [roundQuot_rna sign entropy num den hden]
++  have hr := Nat.mod_lt num (Nat.pos_of_ne_zero hden)
++  split <;> omega
++
++/-- RNA is independent of a stochastic entropy argument. -/
++theorem roundQuot_rna_entropy (sign : Bool) (entropy num den : Nat) :
++    Policy.roundQuot .nearestAway sign entropy num den =
++      Policy.roundQuot .nearestAway sign 0 num den := rfl
++
++/-- The new mode maps to the upstream ties-away quantization kernel, not RNE. -/
++theorem roundRNA_eq_policy (fmt : FloatFormat) (value : Numerics.Dyadic) :
++    roundRNA fmt value = Policy.roundDyadic fmt
++      { rounding := .nearestAway, overflow := .native, underflow := .gradual } 0 value := rfl
++
++/-- Every existing four-mode operation keeps its exact implementation. -/
++theorem add_eq_legacy {fmt : FloatFormat} (mode : RoundingMode) (ieee : IEEERoundingMode)
++    (h : mode.ieee? = some ieee) (x y : Model fmt) :
++    add mode x y = addWithRounding ieee x y := by simp [add, h]
++theorem mul_eq_legacy {fmt : FloatFormat} (mode : RoundingMode) (ieee : IEEERoundingMode)
++    (h : mode.ieee? = some ieee) (x y : Model fmt) :
++    mul mode x y = mulWithRounding ieee x y := by simp [mul, h]
++theorem div_eq_legacy {fmt : FloatFormat} (mode : RoundingMode) (ieee : IEEERoundingMode)
++    (h : mode.ieee? = some ieee) (x y : Model fmt) :
++    div mode x y = divWithRounding ieee x y := by simp [div, h]
++theorem fma_eq_legacy {fmt : FloatFormat} (mode : RoundingMode) (ieee : IEEERoundingMode)
++    (h : mode.ieee? = some ieee) (x y z : Model fmt) :
++    fma mode x y z = fmaWithRounding ieee x y z := by simp [fma, h]
++theorem sqrt_eq_legacy {fmt : FloatFormat} (mode : RoundingMode) (ieee : IEEERoundingMode)
++    (h : mode.ieee? = some ieee) (hIEEE : fmt.encoding = .ieee) (x : Model fmt) :
++    sqrt hIEEE mode x = sqrtWithRounding ieee x := by simp [sqrt, h]
++
++end FloatLib.Floats.Formats.BinaryInterchange.Model.SMT
+diff --git a/FloatLib/Floats/Formats/BinaryInterchange/SMT/Rounding.lean b/FloatLib/Floats/Formats/BinaryInterchange/SMT/Rounding.lean
+new file mode 100644
+index 0000000000..8bdde40ef4
+--- /dev/null
++++ b/FloatLib/Floats/Formats/BinaryInterchange/SMT/Rounding.lean
+@@ -0,0 +1,168 @@
++/-
++SMT-LIB's five deterministic rounding attributes, extending the existing
++four-mode API without changing its constructor set or existing proofs.
++-/
++module
++public import FloatLib.Floats.Formats.BinaryInterchange.Rounding.Policy.Runtime
++public import FloatLib.Floats.Formats.BinaryInterchange.Operations.Runtime
++public import FloatLib.Floats.Formats.BinaryInterchange.Operations.Compare.Runtime
++public import FloatLib.Floats.Formats.BinaryInterchange.Conversion.Cast.Runtime
++@[expose] public section
++namespace FloatLib.Floats.Formats.BinaryInterchange.Model.SMT
++open FloatLib.Numerics
++
++inductive RoundingMode where
++  | rne | rna | rtp | rtn | rtz
++  deriving DecidableEq, Repr
++
++/-- The existing public IEEE mode, if this attribute has one. -/
++def RoundingMode.ieee? : RoundingMode → Option IEEERoundingMode
++  | .rne => some .nearestEven
++  | .rna => none
++  | .rtp => some .towardPositiveInfinity
++  | .rtn => some .towardNegativeInfinity
++  | .rtz => some .towardZero
++
++/-- Native IEEE overflow, gradual underflow and ties away from zero. -/
++def nearestAwayPolicy : QuantizationPolicy :=
++  { rounding := .nearestAway, overflow := .native, underflow := .gradual }
++
++/-- Exact dyadic product before a single destination rounding. -/
++def exactProduct (x y : Numerics.Dyadic) : Numerics.Dyadic :=
++  { negative := Bool.xor x.negative y.negative
++    significand := x.significand * y.significand
++    exponent := x.exponent + y.exponent }
++
++/-- Exact RNA rounding uses the existing integer/rational policy kernel. -/
++def roundRNA (fmt : FloatFormat) (value : Numerics.Dyadic) : Model fmt :=
++  Policy.roundDyadic fmt nearestAwayPolicy 0 value
++
++/-- All four previously supported modes delegate unchanged. -/
++def add {fmt : FloatFormat} (mode : RoundingMode) (x y : Model fmt) : Model fmt :=
++  match mode.ieee? with
++  | some ieee => addWithRounding ieee x y
++  | none =>
++      match toDyadic? x, toDyadic? y with
++      | some dx, some dy =>
++          let exact := addDyadic dx dy
++          if exact.significand == 0 then zero fmt (dx.negative && dy.negative)
++          else roundRNA fmt exact
++      | _, _ => Model.add x y
++
++def sub {fmt : FloatFormat} (mode : RoundingMode) (x y : Model fmt) : Model fmt :=
++  add mode x (neg y)
++
++def mul {fmt : FloatFormat} (mode : RoundingMode) (x y : Model fmt) : Model fmt :=
++  match mode.ieee? with
++  | some ieee => mulWithRounding ieee x y
++  | none =>
++      match toDyadic? x, toDyadic? y with
++      | some dx, some dy => roundRNA fmt (exactProduct dx dy)
++      | _, _ => Model.mul x y
++
++def div {fmt : FloatFormat} (mode : RoundingMode) (x y : Model fmt) : Model fmt :=
++  match mode.ieee? with
++  | some ieee => divWithRounding ieee x y
++  | none =>
++      match toDyadic? x, toDyadic? y with
++      | some dx, some dy =>
++          if hden : dy.significand = 0 then Model.div x y
++          else
++            let scaled := RationalBinary.scaleByPowerOfTwo
++              dx.significand dy.significand (dx.exponent - dy.exponent)
++            Policy.roundRatGeneralOfDenNeZero fmt nearestAwayPolicy 0
++              (dx.negative != dy.negative) scaled.1 scaled.2
++              (RationalBinary.scaleByPowerOfTwo_snd_ne_zero
++                dx.significand dy.significand (dx.exponent - dy.exponent) hden)
++      | _, _ => Model.div x y
++
++def fma {fmt : FloatFormat} (mode : RoundingMode) (x y z : Model fmt) : Model fmt :=
++  match mode.ieee? with
++  | some ieee => fmaWithRounding ieee x y z
++  | none =>
++      match toDyadic? x, toDyadic? y, toDyadic? z with
++      | some dx, some dy, some dz =>
++          let product := exactProduct dx dy
++          let exact := addDyadic product dz
++          if exact.significand == 0 then zero fmt (product.negative && dz.negative)
++          else roundRNA fmt exact
++      | _, _, _ => Model.fma x y z
++
++/-- Exact value of a nonnegative IEEE code. The all-ones exponent with zero
++fraction is used only as the virtual successor of the largest finite value. -/
++def positiveCodeDyadic (fmt : FloatFormat) (code : Nat) : Numerics.Dyadic :=
++  let fraction := code % 2 ^ fmt.fracWidth
++  let exponent := code / 2 ^ fmt.fracWidth
++  { negative := false
++    significand := if exponent == 0 then fraction else 2 ^ fmt.fracWidth + fraction
++    exponent := (if exponent == 0 then 1 else (exponent : Int)) -
++      (fmt.exponentBias : Int) - (fmt.fracWidth : Int) }
++
++/-- Binary-search the last nonnegative code whose exact square is at most x.
++The interval shrinks each iteration; bitWidth+1 iterations suffice. -/
++def sqrtFloorCode (fmt : FloatFormat) (x : Numerics.Dyadic) : Nat → Nat → Nat → Nat
++  | 0, lo, _ => lo
++  | fuel + 1, lo, hi =>
++      if lo + 1 ≥ hi then lo else
++        let mid := (lo + hi) / 2
++        let value := positiveCodeDyadic fmt mid
++        if cmpDyadic x (exactProduct value value) == .lt then
++          sqrtFloorCode fmt x fuel lo mid
++        else sqrtFloorCode fmt x fuel mid hi
++
++/-- RNA square root over IEEE interchange formats. Exact squared comparisons
++locate adjacent destination values and their midpoint; ties choose the upper
++value. There is no RNE fallback or approximation at any finite boundary. -/
++def sqrt {fmt : FloatFormat} (_hIEEE : fmt.encoding = .ieee)
++    (mode : RoundingMode) (x : Model fmt) : Model fmt :=
++  match mode.ieee? with
++  | some ieee => sqrtWithRounding ieee x
++  | none =>
++      match toDyadic? x with
++      | none => Model.sqrt x
++      | some dx =>
++          if dx.negative || dx.significand == 0 then Model.sqrt x
++          else
++            let infinityCode := (2 ^ fmt.expWidth - 1) * 2 ^ fmt.fracWidth
++            let lower := sqrtFloorCode fmt dx (fmt.bitWidth + 1) 0 infinityCode
++            let dl := positiveCodeDyadic fmt lower
++            let dh := positiveCodeDyadic fmt (lower + 1)
++            let sum := addDyadic dl dh
++            let midpoint := { sum with exponent := sum.exponent - 1 }
++            let result := match cmpDyadic dx (exactProduct midpoint midpoint) with
++              | .lt => lower
++              | .eq | .gt => lower + 1
++            Model.ofNatBits result
++
++/-- Exact integral rounding used by FP-to-BV and roundToIntegral. -/
++def roundToInt (mode : RoundingMode) (value : Numerics.Dyadic) : Int :=
++  match mode.ieee? with
++  | some ieee => roundDyadicToInt ieee value
++  | none =>
++      let magnitude := match value.exponent with
++        | .ofNat shift => Nat.shiftLeft value.significand shift
++        | .negSucc shift => Policy.roundQuot .nearestAway value.negative 0
++            value.significand (Nat.shiftLeft 1 (shift + 1))
++      if value.negative then -Int.ofNat magnitude else Int.ofNat magnitude
++
++def roundToIntegral {fmt : FloatFormat} (mode : RoundingMode) (x : Model fmt) : Model fmt :=
++  match mode.ieee? with
++  | some ieee => Model.roundToIntegral x ieee
++  | none =>
++      match toDyadic? x with
++      | none => Model.roundToIntegral x .nearestEven
++      | some dx =>
++          let integer := roundToInt mode dx
++          if integer == 0 then zero fmt dx.negative
++          else roundRNA fmt { negative := integer < 0, significand := integer.natAbs, exponent := 0 }
++
++/-- Format conversion with exceptional behavior inherited from the public cast.
++The finite conversion is exactly rounded once under RNA. -/
++def cast (src dst : FloatFormat) (mode : RoundingMode) (x : Model src) : Model dst :=
++  match mode.ieee? with
++  | some ieee => castWithRounding src dst x ieee
++  | none =>
++      match toDyadic? x with
++      | some dx => roundRNA dst dx
++      | none => castWithRounding src dst x .nearestEven
++end FloatLib.Floats.Formats.BinaryInterchange.Model.SMT

@@ -1,4 +1,5 @@
 import Ayxg.QfAbv.Ast
+import Ayxg.QfAbv.FpEval
 
 namespace Ayxg
 namespace QfAbv
@@ -11,6 +12,8 @@ abbrev Denote : TermSort → Type
   | .bool => Bool
   | .bv w => BitVec w
   | .array iw vw => Mem iw vw
+  | .fp f => FPValue f
+  | .roundingMode => RoundingMode
 
 /-- A total typed environment assigning every declaration in a context its value. -/
 inductive Env : Ctx → Type where
@@ -26,6 +29,8 @@ def lookup : {Γ : Ctx} → Env Γ → Var Γ s → Denote s
   | _ :: _, .cons _ env, .there x => lookup env x
 
 end Env
+
+variable [FPInterpretation]
 
 namespace Eval
 
@@ -67,6 +72,22 @@ def eval : {Γ : Ctx} → Env Γ → {s : TermSort} → Expr Γ s → Denote s
   | _, env, _, Expr.var x => Env.lookup env x
   | _, _, .bool, Expr.boolLit b => b
   | _, _, .bv w, Expr.bvLit _ v => BitVec.ofNat w v
+  | _, _, .roundingMode, Expr.rmLit mode => mode
+  | _, env, .fp f, Expr.fpFromBits _ e => FPValue.ofBits f (eval env e)
+  | _, env, .bv _, Expr.fpToBits _ e => FPEval.toBits (eval env e)
+  | _, env, .fp _, Expr.fpUnary op _ e => FPEval.unary op (eval env e)
+  | _, env, .fp _, Expr.fpBinary op _ a b => FPEval.binary op (eval env a) (eval env b)
+  | _, env, .fp _, Expr.fpRounded op _ rm a b => FPEval.rounded op (eval env rm) (eval env a) (eval env b)
+  | _, env, .fp _, Expr.fpFma _ rm a b c => FPEval.fma (eval env rm) (eval env a) (eval env b) (eval env c)
+  | _, env, .fp _, Expr.fpSqrt _ rm e => FPEval.sqrt (eval env rm) (eval env e)
+  | _, env, .fp _, Expr.fpRoundToIntegral _ rm e => FPEval.roundToIntegral (eval env rm) (eval env e)
+  | _, env, .bool, Expr.fpCompare op _ a b => FPEval.compare op (eval env a) (eval env b)
+  | _, env, .bool, Expr.fpClassify op _ e => FPEval.classify op (eval env e)
+  | _, env, .bv _, Expr.fpToBv signed _ width rm e => FPEval.toBV signed width (eval env rm) (eval env e)
+  | _, env, .fp _, Expr.fpFromBv signed _ f rm e => FPEval.fromBV signed f (eval env rm) (eval env e)
+  | _, env, .fp _, Expr.fpCast src dst rm e => FPEval.cast src dst (eval env rm) (eval env e)
+  | _, env, .bool, Expr.eqFp _ a b => decide (eval env a = eval env b)
+  | _, env, .bool, Expr.eqRoundingMode a b => eval env a == eval env b
   | _, env, .array _ _, Expr.constArray _ _ value => memConst (eval env value)
   | _, env, .bool, Expr.boolNot p => !(eval env p)
   | _, env, .bool, Expr.boolAnd p q => eval env p && eval env q

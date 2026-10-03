@@ -3,6 +3,8 @@ import Ayxg.QfAbv.Subst
 namespace Ayxg
 namespace QfAbv
 
+variable [FPInterpretation]
+
 /-- A simultaneous expression-backed state update from an old context `Γold` to
 an output context.
 

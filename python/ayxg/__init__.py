@@ -6,11 +6,12 @@ from .qfabv import (
     QFAbvContext, QFAbvControlView, QFAbvExpr, QFAbvSegment, QFAbvSTS,
     QFAbvStep, QFAbvUpdate, QFAbvValuation, Sort, Value,
 )
-from .fp import FPValue, RoundingMode
+from .fp import FPValue, RoundingMode, FPInterpretation, UnderspecifiedFPKey, UnderspecifiedFPError
 from .expr import Declaration, TermSort, TypedExpr
 from .eval import QFAbvSemantics, equal_valuations, eval_expr, eval_exprs, eval_step, eval_update
 
 __all__ = [
+    "FPInterpretation", "UnderspecifiedFPKey", "UnderspecifiedFPError",
     "FPSort", "RoundingModeSort", "FPValue", "RoundingMode",
     "Adapter", "ArraySort", "BoolSort", "BVSort", "ControlView", "Declaration",
     "QFAbvAdapter", "QFAbvArrayValue", "QFAbvContext", "QFAbvControlView",
