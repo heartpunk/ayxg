@@ -1,0 +1,23 @@
+version: 5.1.0
+left[8]: 0
+right[8]: 1
+equality: unsat
+; benchmark generated from python API
+(set-info :status unknown)
+(assert
+ (let ((?x30 (store (store (store (store ((as const (Array (_ BitVec 4) (_ BitVec 1))) (_ bv1 1)) (_ bv0 4) (_ bv0 1)) (_ bv1 4) (_ bv0 1)) (_ bv7 4) (_ bv0 1)) (_ bv9 4) (_ bv0 1))))
+(let ((?x38 (store (store (store (store ?x30 (_ bv12 4) (_ bv0 1)) (_ bv13 4) (_ bv0 1)) (_ bv14 4) (_ bv0 1)) (_ bv15 4) (_ bv0 1))))
+(let ((?x16 (store (store (store (store ((as const (Array (_ BitVec 4) (_ BitVec 1))) (_ bv0 1)) (_ bv2 4) (_ bv1 1)) (_ bv3 4) (_ bv1 1)) (_ bv4 4) (_ bv1 1)) (_ bv5 4) (_ bv1 1))))
+(let ((?x22 (store (store (store ?x16 (_ bv6 4) (_ bv1 1)) (_ bv10 4) (_ bv1 1)) (_ bv11 4) (_ bv1 1))))
+(= ?x22 ?x38))))))
+(check-sat)
+
+{} unsat 
+{'auto_config': False} unsat 
+{'smt.array.extensional': True} unsat 
+{'smt.array.weak': False} unsat 
+{'smt.bv.solver': 2} unsat 
+expanded minimal False
+equal complementary full coverage: [True, True, True, True]
+expanded full coverage False
+default full coverage sat
