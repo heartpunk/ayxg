@@ -1,0 +1,10 @@
+{
+  "revision": "2886db473761eb1db00ada44dce303583f7774c8",
+  "baseline": "1cd06bae64a14b793e464a5aea959a1b20aed429",
+  "sha256": {
+    "Ayxg/QfAbv/SymbolicStep.lean": "874cb8639d1bf25f111acda7c7368b3f64115a31eb32b8b3e89a4babc636a140",
+    "Ayxg.lean": "df40323824eb6404c535c34c2dd9f036a83341decda5df5cd44943d450115f23",
+    "tests/lean/SymbolicStepExamples.lean": "116f86d072f51281231756b925e99e7bd39303f007800246e9449e01cd7cbb4e",
+    "notes/voogd-symbolic-step/ProofAudit.lean": "6196f49adbb9c9290844bc03512d1d94ff944d96110c8e9a172debab37131727"
+  }
+}
