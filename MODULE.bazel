@@ -1,5 +1,7 @@
 module(name = "ayxg", version = "0.1.0")
 
+bazel_dep(name = "platforms", version = "1.1.0")
+
 bazel_dep(name = "rules_python", version = "1.7.0")
 
 python = use_extension("@rules_python//python/extensions:python.bzl", "python")
@@ -9,8 +11,31 @@ python.toolchain(python_version = "3.12")
 pip = use_extension("@rules_python//python/extensions:pip.bzl", "pip")
 pip.parse(
     hub_name = "ayxg_pypi",
+    download_only = True,
     python_interpreter = "python3.12",
     python_version = "3.12",
     requirements_lock = "//:requirements_z3.txt",
 )
 use_repo(pip, "ayxg_pypi")
+
+nix_python_runtime = use_repo_rule(
+    "@rules_python//python/local_toolchains:repos.bzl", "local_runtime_repo"
+)
+nix_python_toolchains = use_repo_rule(
+    "@rules_python//python/local_toolchains:repos.bzl", "local_runtime_toolchains_repo"
+)
+nix_python_runtime(
+    name = "nix_python_3_12",
+    interpreter_path = "python3.12",
+    on_failure = "fail",
+)
+nix_python_toolchains(
+    name = "nix_python_toolchains",
+    runtimes = ["nix_python_3_12"],
+    target_compatible_with = {"nix_python_3_12": ["HOST_CONSTRAINTS"]},
+)
+register_toolchains("@nix_python_toolchains//:all")
+
+
+native = use_extension("//tools:native.bzl", "native")
+use_repo(native, "ayxg_native")

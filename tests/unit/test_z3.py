@@ -1,5 +1,13 @@
 """Canonical converter contracts and SMT semantic round trips."""
 import unittest
+import ctypes
+import os
+if location := os.environ.get("AYXG_LIBSTDCXX_RLOCATION"):
+    from python.runfiles import runfiles
+    library = runfiles.Create().Rlocation(location)
+    if library is None:
+        raise RuntimeError("declared Z3 C++ runtime is missing")
+    _LIBSTDCXX = ctypes.CDLL(library, mode=ctypes.RTLD_GLOBAL)
 import z3
 from ayxg.expr import ArtifactError, UnsupportedTheoryError, BOOL, TermSort, TypedExpr
 from ayxg.z3 import (expr_from_z3, expr_to_z3, sort_from_z3, sort_to_z3,

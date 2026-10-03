@@ -6,3 +6,5 @@ bazel-*
 
 __pycache__/
 *.py[cod]
+.hypothesis/
+.pytest_cache/
