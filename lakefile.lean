@@ -12,7 +12,7 @@ require floatlib from (run_io do
     | throw <| IO.userError "Run Lake through nix develop: AYXG_FLOATLIB_SOURCE missing"
   let some key ← IO.getEnv "AYXG_FLOATLIB_SOURCE_KEY"
     | throw <| IO.userError "Run Lake through nix develop: AYXG_FLOATLIB_SOURCE_KEY missing"
-  let writable := System.FilePath.mk ".lake" / ("floatlib-source-" ++ key)
+  let writable := __dir__ / ".lake" / ("floatlib-source-" ++ key)
   unless ← writable.pathExists do
     IO.FS.createDirAll writable
     let copied ← IO.Process.output { cmd := "cp", args := #["-R", source ++ "/.", writable.toString] }
