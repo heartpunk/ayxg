@@ -30,3 +30,12 @@ py_test(
     data = select({"@platforms//os:linux": ["@ayxg_native//:libstdc++.so.6"], "//conditions:default": []}),
     env = select({"@platforms//os:linux": {"AYXG_LIBSTDCXX_RLOCATION": "$(rlocationpath @ayxg_native//:libstdc++.so.6)"}, "//conditions:default": {}}),
 )
+
+py_test(
+    name = "fp_test",
+    srcs = ["tests/unit/test_fp.py"],
+    main = "tests/unit/test_fp.py",
+    deps = [":z3", "@rules_python//python/runfiles"],
+    data = select({"@platforms//os:linux": ["@ayxg_native//:libstdc++.so.6"], "//conditions:default": []}),
+    env = select({"@platforms//os:linux": {"AYXG_LIBSTDCXX_RLOCATION": "$(rlocationpath @ayxg_native//:libstdc++.so.6)"}, "//conditions:default": {}}),
+)

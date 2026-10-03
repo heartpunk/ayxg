@@ -1,5 +1,12 @@
 """FP contracts: every admitted family, five rounding modes, SMT special values."""
 import unittest
+import ctypes
+import os
+if location := os.environ.get("AYXG_LIBSTDCXX_RLOCATION"):
+    from python.runfiles import runfiles
+    library = runfiles.Create().Rlocation(location)
+    if library is None: raise RuntimeError("declared Z3 C++ runtime missing")
+    _LIBSTDCXX = ctypes.CDLL(library, mode=ctypes.RTLD_GLOBAL)
 import z3
 from ayxg.expr import BOOL, ArtifactError, TermSort, TypedExpr
 from ayxg.fp import FPValue, RM, RoundingMode, fp_bits, rm_literal, UnderspecifiedFPError
