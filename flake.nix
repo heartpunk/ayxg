@@ -31,6 +31,7 @@
         in {
           default = pkgs.mkShell {
             AYXG_FLOATLIB_SOURCE = "${floatlibSource}";
+            AYXG_FLOATLIB_SOURCE_KEY = (builtins.fromJSON (builtins.readFile ./nix/floatlib-smt-rna.json)).scoped_committed_revision;
             shellHook = ''
               export FLOATLIB_BUILD_DIR="$PWD/.lake/floatlib-build"
             '';

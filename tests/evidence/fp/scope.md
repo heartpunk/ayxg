@@ -58,3 +58,9 @@ half-ULP rounding ties in all five modes, and independent-operand FMA cancellati
 cases. Coverage is recorded per format in python-lean-coverage-v19.json. These
 are closed operation expressions; this does not claim arbitrary deeply nested
 FP program or native hardware correspondence.
+
+Public root Lake metadata: qualified `lake update` generated the pinned manifest;
+qualified `lake env true` passed on NixOS. The writable dependency copy is keyed
+by scoped source revision222236f0, so the committed path is independent of Nix
+store hashes on different platforms. This metadata check did not rebuild the
+whole root library; the full library modules were built in the real FFI closure.
