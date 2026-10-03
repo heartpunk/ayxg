@@ -470,23 +470,26 @@ class TypedExpr:
         return variable_sorts((self,))
 
     def to_data(self) -> dict[str, Any]:
-        result: dict[str, Any] = {
-            "op": self.op,
-            "sort": self.sort.to_data(),
-        }
-        if self.args:
-            result["args"] = [arg.to_data() for arg in self.args]
-        if self.name is not None:
-            result["name"] = self.name
-        if self.value is not None:
-            result["value"] = self.value
-        if self.amount is not None:
-            result["amount"] = self.amount
-        if self.hi is not None:
-            result["hi"] = self.hi
-        if self.lo is not None:
-            result["lo"] = self.lo
-        return result
+        # Preserve sharing while exposing expression data to the artifact codec.
+        memo: dict[int, dict[str, Any]] = {}
+        stack = [(self, False)]
+        while stack:
+            node, ready = stack.pop()
+            if id(node) in memo:
+                continue
+            if not ready:
+                stack.append((node, True))
+                stack.extend((arg, False) for arg in reversed(node.args))
+                continue
+            result: dict[str, Any] = {"op": node.op, "sort": node.sort.to_data()}
+            if node.args:
+                result["args"] = [memo[id(arg)] for arg in node.args]
+            for key in ("name", "value", "amount", "hi", "lo"):
+                value = getattr(node, key)
+                if value is not None:
+                    result[key] = value
+            memo[id(node)] = result
+        return memo[id(self)]
 
     @classmethod
     def from_data(
@@ -494,6 +497,8 @@ class TypedExpr:
         value: Any,
         field: str = "expression",
     ) -> TypedExpr:
+        if isinstance(value, cls):
+            return value
         obj = _object(value, field)
         op = _text(obj.get("op"), f"{field}.op")
         expected = {"op", "sort"}
