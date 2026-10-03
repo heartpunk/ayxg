@@ -7,7 +7,7 @@ import z3
 from ayxg.expr import Declaration, TermSort, TypedExpr as E
 from ayxg.qfabv import QFAbvContext, QFAbvValuation, QFAbvExpr, decode_sort
 from ayxg.eval import eval_expr
-from ayxg.codec import dumps, loads
+from ayxg.codec import dumps, loads, typed_expr_roots_dag
 from ayxg.z3 import expr_to_z3
 from differential_expr import LeanOracle
 
@@ -36,7 +36,7 @@ def main():
         for node in examples:
             node = loads(dumps(node))
             py = eval_expr(QFAbvExpr(ctx, decode_sort(bv), node), QFAbvValuation(ctx,(x,y)))
-            request = {'declarations':[d.to_data(),d.to_data()], 'values':[x,y], 'expression':node.to_data()}
+            request = {'declarations':[d.to_data(),d.to_data()], 'values':[x,y], 'expression_dag':typed_expr_roots_dag((node,))}
             lean = oracle.evaluate(request)
             expected = {'kind':'bv', 'value':py}
             zctx = z3.Context()

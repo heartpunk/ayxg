@@ -119,13 +119,11 @@ def expr_to_z3(
     variables: Mapping[str, z3.ExprRef] | Sequence[tuple[str, z3.ExprRef]],
     ctx: z3.Context,
     *,
-    memo: dict[int, tuple[TypedExpr, z3.ExprRef]] | None = None,
+    memo: dict[object, tuple[TypedExpr, z3.ExprRef]] | None = None,
 ) -> z3.ExprRef:
     """Interpret one typed expression in a fixed Z3 environment."""
 
     from ._scoped import interpret
-    if memo is not None and id(expression) in memo and memo[id(expression)][0] is expression:
-        return memo[id(expression)][1]
     def apply(node: TypedExpr, args: tuple[z3.ExprRef, ...]) -> z3.ExprRef:
         if node.op == "bool_lit":
             return z3.BoolVal(node.value, ctx=ctx)
@@ -205,9 +203,10 @@ def expr_to_z3(
         QFAbvContext(tuple(Declaration(name, sort_from_z3(value.sort())) for name, value in environment)).check_expression(expression)
     except ValueError as error:
         raise ArtifactError(str(error)) from error
-    result, = interpret((expression,), environment, apply, root_memo=memo)
-    if memo is not None:
-        memo[id(expression)] = (expression, result)
+    if any(value.ctx != ctx for _, value in environment):
+        raise ArtifactError("Z3 environment belongs to another context")
+    cache_scope = (ctx.ref().value, tuple((name, value.get_id()) for name, value in environment))
+    result, = interpret((expression,), environment, apply, root_memo=memo, cache_scope=cache_scope)
     return result
 
 def _fold(op: str, args: tuple[TypedExpr, ...], identity: bool) -> TypedExpr:

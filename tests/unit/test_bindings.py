@@ -98,3 +98,14 @@ def test_substitution_evaluation_law(x, y):
     expression = QFAbvExpr(source, decode_sort(B), node)
     state = QFAbvValuation(source, (x,))
     assert eval_expr(expression.substitute(update), state) == eval_expr(expression, eval_update(update, state))
+
+
+def test_z3_cache_separates_environments_and_contexts():
+    node = E.at(0, B)
+    memo = {}
+    for ctx in (z3.Context(), z3.Context()):
+        for number in (3, 9):
+            env = [('x', z3.BitVecVal(number, 8, ctx))]
+            result = expr_to_z3(node, env, ctx, memo=memo)
+            assert result.ctx == ctx and result.as_long() == number
+            assert expr_to_z3(node, env, ctx, memo=memo) is result

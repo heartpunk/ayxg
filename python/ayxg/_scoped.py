@@ -9,7 +9,8 @@ V = TypeVar('V')
 def interpret(roots: Sequence[TypedExpr], environment: Sequence[tuple[str, V]],
               apply: Callable[[TypedExpr, tuple[V, ...]], V], *,
               branch: Callable[[V], bool] | None = None,
-              root_memo: dict[int, tuple[TypedExpr, V]] | None = None) -> tuple[V, ...]:
+              root_memo: dict[object, tuple[TypedExpr, V]] | None = None,
+              cache_scope: object = None) -> tuple[V, ...]:
     scopes = [tuple(environment)]
     root_nodes: dict[int, TypedExpr] = {}
     extensions: dict[tuple[int, int], int] = {}
@@ -23,8 +24,8 @@ def interpret(roots: Sequence[TypedExpr], environment: Sequence[tuple[str, V]],
                 root_nodes[id(node)] = node
             if key in memo:
                 continue
-            if scope == 0 and root_memo is not None and id(node) in root_memo and root_memo[id(node)][0] is node:
-                memo[key] = root_memo[id(node)][1]
+            if scope == 0 and root_memo is not None and (cache_scope, id(node)) in root_memo and root_memo[(cache_scope, id(node))][0] is node:
+                memo[key] = root_memo[(cache_scope, id(node))][1]
                 continue
             if node.op == 'var':
                 env = scopes[scope]
@@ -80,5 +81,5 @@ def interpret(roots: Sequence[TypedExpr], environment: Sequence[tuple[str, V]],
                 stack.extend((arg, scope, False) for arg in reversed(node.args)
                              if (id(arg), scope) not in memo)
     if root_memo is not None:
-        root_memo.update((identity, (node, memo[(identity, 0)])) for identity, node in root_nodes.items())
+        root_memo.update(((cache_scope, identity), (node, memo[(identity, 0)])) for identity, node in root_nodes.items())
     return tuple(memo[(id(root), 0)] for root in roots)
