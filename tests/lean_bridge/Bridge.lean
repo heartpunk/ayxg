@@ -135,6 +135,15 @@ def segmentRequest (j : Json) : Except String Json := do
 
 def innermost (s : TermSort) : Expr [⟨"x", s⟩] s := .var .here
 
+/-- Test-only fixture: the same runtime variable object at two valid sorts. -/
+private unsafe def writerPolymorphicShared : Json :=
+  let vb := innermost .bool
+  let vv : Expr [⟨"x", .bv 8⟩] (.bv 8) := unsafeCast vb
+  let b : Expr [] .bool := .letPar (.cons "x" .bool (.boolLit true) .nil) vb
+  let v : Expr [] (.bv 8) := .letPar (.cons "x" (.bv 8) (.bvLit 8 7) .nil) vv
+  writeRootsDag [.mk .bool b, .mk (.bv 8) v]
+
+@[implemented_by writerPolymorphicShared]
 def writerPolymorphic : Json :=
   let b : Expr [] .bool := .letPar (.cons "x" .bool (.boolLit true) .nil) (innermost .bool)
   let v : Expr [] (.bv 8) := .letPar (.cons "x" (.bv 8) (.bvLit 8 7) .nil) (innermost (.bv 8))
