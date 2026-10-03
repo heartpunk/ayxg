@@ -66,6 +66,10 @@ def sort_from_z3(sort: z3.SortRef) -> TermSort:
         return BOOL
     if sort.kind() == z3.Z3_BV_SORT:
         return TermSort.bv(sort.size())
+    if sort.kind() == z3.Z3_FLOATING_POINT_SORT:
+        return TermSort.fp(sort.ebits(), sort.sbits())
+    if sort.kind() == z3.Z3_ROUNDING_MODE_SORT:
+        return TermSort.rounding_mode()
     if sort.kind() == z3.Z3_ARRAY_SORT:
         domain = sort.domain()
         range_sort = sort.range()
@@ -85,6 +89,10 @@ def sort_to_z3(sort: TermSort, ctx: z3.Context) -> z3.SortRef:
         return z3.BoolSort(ctx=ctx)
     if sort.kind == "bv":
         return z3.BitVecSort(sort.width, ctx=ctx)
+    if sort.kind == "fp":
+        return z3.FPSort(sort.exponent_bits, sort.significand_bits, ctx=ctx)
+    if sort.kind == "rm":
+        return z3.RNE(ctx=ctx).sort()
     if sort.kind == "array":
         return z3.ArraySort(
             z3.BitVecSort(sort.index_width, ctx=ctx),
@@ -134,6 +142,9 @@ def expr_to_z3(
                 )
         elif node.op == "bool_lit":
             result = z3.BoolVal(node.value, ctx=ctx)
+        elif node.op == "rm_lit":
+            from .fp_z3 import rounding_mode_to_z3
+            result = rounding_mode_to_z3(node.value, ctx)
         elif node.op == "bv_lit":
             result = z3.BitVecVal(node.value, node.sort.width, ctx=ctx)
         elif not expanded:
@@ -146,7 +157,10 @@ def expr_to_z3(
             continue
         else:
             args = tuple(conversion_memo[id(arg)][1] for arg in node.args)
-            if node.op == "const_array":
+            if node.op.startswith("fp_") or node.op in {"bv_to_fp", "sbv_to_fp", "ubv_to_fp"}:
+                from .fp_z3 import fp_node_to_z3
+                result = fp_node_to_z3(node, args, ctx)
+            elif node.op == "const_array":
                 result = z3.K(sort_to_z3(node.sort, ctx).domain(), args[0])
             elif node.op == "bool_not":
                 result = z3.Not(args[0])
@@ -249,10 +263,19 @@ def _expr_from_z3_uncached(expression: z3.ExprRef) -> TypedExpr:
         return TypedExpr.bv_lit(expression.size(), expression.as_long())
 
     kind = expression.decl().kind()
+    from .fp_z3 import fp_leaf_from_z3, FP_Z3_OPERATORS
+    leaf = fp_leaf_from_z3(expression, sort)
+    if leaf is not None:
+        return leaf
     raw_children = tuple(expression.children())
     if kind in {z3.Z3_OP_AND, z3.Z3_OP_OR}:
         raw_children = tuple(sorted(raw_children, key=lambda child: child.sexpr()))
     children = tuple(expr_from_z3(child) for child in raw_children)
+    if kind in FP_Z3_OPERATORS:
+        op = FP_Z3_OPERATORS[kind]
+        if kind == z3.Z3_OP_FPA_TO_FP:
+            op = "bv_to_fp" if len(children) == 1 else ("fp_to_fp" if children[1].sort.kind == "fp" else "sbv_to_fp")
+        return TypedExpr(op, sort, children)
     if kind == z3.Z3_OP_UNINTERPRETED and not children:
         return TypedExpr.var(str(expression.decl().name()), sort)
     if kind == z3.Z3_OP_NOT:

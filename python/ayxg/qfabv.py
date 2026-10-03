@@ -38,7 +38,21 @@ class ArraySort:
     def encode(self) -> TermSort:
         return TermSort.array(self.index_width, self.value_width)
 
-Sort: TypeAlias = BoolSort | BVSort | ArraySort
+@dataclass(frozen=True)
+class FPSort:
+    exponent_bits: int
+    significand_bits: int
+    def __post_init__(self) -> None:
+        TermSort.fp(self.exponent_bits, self.significand_bits)
+    def encode(self) -> TermSort:
+        return TermSort.fp(self.exponent_bits, self.significand_bits)
+
+@dataclass(frozen=True)
+class RoundingModeSort:
+    def encode(self) -> TermSort:
+        return TermSort.rounding_mode()
+
+Sort: TypeAlias = BoolSort | BVSort | ArraySort | FPSort | RoundingModeSort
 S = TypeVar("S", bound=Sort, covariant=True)
 
 def decode_sort(raw: TermSort) -> Sort:
@@ -47,6 +61,10 @@ def decode_sort(raw: TermSort) -> Sort:
     if raw.kind == "bv":
         assert raw.width is not None
         return BVSort(raw.width)
+    if raw.kind == "fp":
+        return FPSort(*raw.require_fp_widths())
+    if raw.kind == "rm":
+        return RoundingModeSort()
     assert raw.index_width is not None and raw.value_width is not None
     return ArraySort(raw.index_width, raw.value_width)
 
@@ -162,7 +180,9 @@ class QFAbvArrayValue:
                     or value == self.default):
                 raise ValueError("array entry outside canonical finite support")
 
-Value: TypeAlias = bool | int | QFAbvArrayValue
+from .fp import FPValue, RoundingMode
+
+Value: TypeAlias = bool | int | QFAbvArrayValue | FPValue | RoundingMode
 
 @dataclass(frozen=True)
 class QFAbvValuation(Generic[C]):
@@ -179,6 +199,10 @@ class QFAbvValuation(Generic[C]):
             elif sort.kind == "bv":
                 assert sort.width is not None
                 valid = type(value) is int and 0 <= value < (1 << sort.width)
+            elif sort.kind == "fp":
+                valid = isinstance(value, FPValue) and value.sort == sort
+            elif sort.kind == "rm":
+                valid = isinstance(value, RoundingMode)
             else:
                 valid = isinstance(value, QFAbvArrayValue) and value.sort.encode() == sort
             if not valid:

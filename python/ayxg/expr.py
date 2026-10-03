@@ -59,9 +59,21 @@ class TermSort:
     width: int | None = None
     index_width: int | None = None
     value_width: int | None = None
+    exponent_bits: int | None = None
+    significand_bits: int | None = None
 
     def __post_init__(self) -> None:
-        if self.kind == "bool":
+        if self.kind not in {"fp"} and (self.exponent_bits is not None or self.significand_bits is not None):
+            raise ArtifactError("only FP sorts carry exponent/significand widths")
+        if self.kind == "rm":
+            if any(v is not None for v in (self.width, self.index_width, self.value_width)):
+                raise ArtifactError("rounding-mode sort must not carry widths")
+        elif self.kind == "fp":
+            if (type(self.exponent_bits) is not int or self.exponent_bits < 2
+                    or type(self.significand_bits) is not int or self.significand_bits < 2
+                    or any(v is not None for v in (self.width, self.index_width, self.value_width))):
+                raise ArtifactError("FP sort requires exponent/significand widths >= 2")
+        elif self.kind == "bool":
             if (
                 self.width is not None
                 or self.index_width is not None
@@ -106,6 +118,20 @@ class TermSort:
             value_width=value_width,
         )
 
+    @classmethod
+    def fp(cls, exponent_bits: int, significand_bits: int) -> TermSort:
+        return cls("fp", exponent_bits=exponent_bits, significand_bits=significand_bits)
+
+    @classmethod
+    def rounding_mode(cls) -> TermSort:
+        return cls("rm")
+
+    def require_fp_widths(self) -> tuple[int, int]:
+        if self.kind != "fp":
+            raise ArtifactError("expected floating-point sort")
+        assert self.exponent_bits is not None and self.significand_bits is not None
+        return self.exponent_bits, self.significand_bits
+
     def require_bv_width(self) -> int:
         if self.kind != "bv" or self.width is None:
             raise ArtifactError("expected bit-vector sort")
@@ -117,6 +143,10 @@ class TermSort:
         return self.index_width, self.value_width
 
     def to_data(self) -> dict[str, Any]:
+        if self.kind == "rm":
+            return {"kind": "rm"}
+        if self.kind == "fp":
+            return {"kind": "fp", "exponent_bits": self.exponent_bits, "significand_bits": self.significand_bits}
         if self.kind == "bool":
             return {"kind": "bool"}
         if self.kind == "bv":
@@ -131,6 +161,12 @@ class TermSort:
     def from_data(cls, value: Any, field: str = "sort") -> TermSort:
         obj = _object(value, field)
         kind = obj.get("kind")
+        if kind == "rm":
+            _fields(obj, {"kind"}, field)
+            return cls.rounding_mode()
+        if kind == "fp":
+            _fields(obj, {"kind", "exponent_bits", "significand_bits"}, field)
+            return cls.fp(_nonnegative(obj["exponent_bits"], field), _nonnegative(obj["significand_bits"], field))
         if kind == "bool":
             _fields(obj, {"kind"}, field)
             return cls.bool()
@@ -206,7 +242,7 @@ class TypedExpr:
     sort: TermSort
     args: tuple[TypedExpr, ...] = ()
     name: str | None = None
-    value: bool | int | None = None
+    value: bool | int | str | None = None
     amount: int | None = None
     hi: int | None = None
     lo: int | None = None
@@ -234,6 +270,15 @@ class TypedExpr:
                     "bv_lit value must be canonical for its positive width"
                 )
             self._require_arity(0)
+        elif self.op == "rm_lit":
+            expected_metadata = {"value"}
+            self._require_arity(0)
+            if self.sort != TermSort.rounding_mode() or self.value not in {"RNE", "RNA", "RTP", "RTN", "RTZ"}:
+                raise ArtifactError("invalid rounding-mode literal")
+        elif self.op.startswith("fp_") or self.op in {"bv_to_fp", "sbv_to_fp", "ubv_to_fp"}:
+            expected_metadata = set()
+            from .fp import check_fp_node
+            check_fp_node(self)
         elif self.op == "const_array":
             expected_metadata = set()
             self._require_arity(1)
@@ -504,13 +549,13 @@ class TypedExpr:
         expected = {"op", "sort"}
         if op in {"var"}:
             expected.add("name")
-        elif op in {"bool_lit", "bv_lit"}:
+        elif op in {"bool_lit", "bv_lit", "rm_lit"}:
             expected.add("value")
         elif op in _EXTEND_OPS:
             expected |= {"args", "amount"}
         elif op == "extract":
             expected |= {"args", "hi", "lo"}
-        elif op not in {"var", "bool_lit", "bv_lit"}:
+        elif op not in {"var", "bool_lit", "bv_lit", "rm_lit"}:
             expected.add("args")
         _fields(obj, expected, field)
         args = tuple(

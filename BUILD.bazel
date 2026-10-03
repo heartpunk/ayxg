@@ -5,7 +5,7 @@ package(default_visibility = ["//visibility:public"])
 
 py_library(
     name = "ayxg",
-    srcs = glob(["python/ayxg/*.py"], exclude = ["python/ayxg/z3.py"]),
+    srcs = glob(["python/ayxg/*.py"], exclude = ["python/ayxg/z3.py", "python/ayxg/fp_z3.py"]),
     data = ["python/ayxg/py.typed"],
     imports = ["python"],
 )
@@ -17,7 +17,7 @@ filegroup(
 
 py_library(
     name = "z3",
-    srcs = ["python/ayxg/z3.py"],
+    srcs = ["python/ayxg/z3.py", "python/ayxg/fp_z3.py"],
     imports = ["python"],
     deps = [":ayxg", requirement("z3-solver")],
 )

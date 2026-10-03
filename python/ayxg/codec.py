@@ -126,7 +126,7 @@ def loads(text: str) -> Any:
         if not isinstance(refs, list) or any(type(ref) is not int or not 0 <= ref < index for ref in refs):
             raise ValueError("expression arguments must reference earlier nodes")
         data = dict(record)
-        if data.get("op") in {"var", "bool_lit", "bv_lit"}:
+        if data.get("op") in {"var", "bool_lit", "bv_lit", "rm_lit"}:
             if refs:
                 raise ValueError("leaf has arguments")
             del data["args"]

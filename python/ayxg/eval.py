@@ -50,6 +50,9 @@ def _apply(node: TypedExpr, args: tuple[Value, ...], variables: Mapping[str, Val
     if op in {"bool_lit", "bv_lit"}:
         assert node.value is not None
         return node.value
+    if op == "rm_lit" or op.startswith("fp_") or op in {"bv_to_fp", "sbv_to_fp", "ubv_to_fp"}:
+        from .fp_z3 import evaluate_fp_node
+        return evaluate_fp_node(node, args)
     if op == "const_array":
         iw, vw = node.sort.require_array_widths()
         return QFAbvArrayValue(ArraySort(iw, vw), _integer(args[0]))
