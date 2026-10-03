@@ -1,0 +1,2 @@
+Oct 03 15:27:45 nixos systemd[1106]: Started [systemd-run] /run/current-system/sw/bin/bash /tmp/ayxg-binding-dag7.sh.
+Oct 03 15:28:22 nixos systemd[1106]: ayxg-binding-dag7-20261003.service: Consumed 44.154s CPU time over 37.290s wall clock time, 578.7M memory peak.

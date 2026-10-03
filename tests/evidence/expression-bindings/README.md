@@ -58,10 +58,43 @@ No passing claim relies on that failed run.
 ## Boundary of this result
 
 This closes the positional/parallel-binding representation gap and validates
-Python-produced shared DAGs interpreted directly by Lean. It does not yet
-provide a Lean shared-DAG writer, hook a production Lean driver into WRUH,
-or establish universal Python/Lean extraction correspondence. Those remain
-separate work. Bare variable_sorts() intentionally rejects free positional
+Python-produced shared DAGs interpreted directly by Lean. The subsequent writer tranche below supplies Lean shared-DAG output too.
+Production WRUH driver hookup and universal Python/Lean extraction
+correspondence remain separate work. Bare variable_sorts() intentionally rejects free positional
 references without a context; consumers must validate using QFAbvContext.
 No decoder-correctness proof or replacement semantic-transport theorem was
 introduced.
+
+## Lean writer follow-up — completed; pause requested
+
+Validated implementation: `d26bcfc339455407b7776260a5a0c6b37d9ce822`.
+`writeRootsDag` handles every Lean Expr constructor, directly emitting the same
+shared-DAG schema consumed by Python. Output nodes are structurally interned
+using shallow records containing child indices. Bindings remain bindings.
+Variable occurrences are emitted by typed position, retaining shadowing.
+BV literals are canonicalized modulo width, matching their Lean evaluation.
+
+NixOS Lake/lean.py build and both differential programs: exit 0.
+- 640 binding cases: Python→Lean→Python exact canonical DAG equality,
+  plus existing Lean/Python/Z3 evaluation comparisons.
+- 480 further operator cases: round-trip evaluation equality, writer
+  idempotence, and shared-root identity. BV/array generators run 10 examples
+  per operator; FP operators run one finite-valued case per rounding mode.
+- Named variables return in positional form; the existing FP constructor
+  reader represents fp_construct using fpFromBits/concat, so that shorthand
+  round-trips semantically, not with identical operator spelling.
+
+Logs, counts, exact launch script and systemd resource log are in `writer/`.
+Reuse the prior reproduction commands, then run:
+
+```sh
+nix develop --command env PYTHONDONTWRITEBYTECODE=1 PYTHONPATH=python:/tmp/ayxg-bindings-bridge/leanpy python tests/differential_codec.py --bridge-project /tmp/ayxg-bindings-bridge --artifacts /tmp/ayxg-codec-evidence
+```
+
+Limits: these checks concern the positive-width SMT-LIB domain, not Lean's
+extra zero-width BV inhabitants. Structural interning shares output nodes;
+the writer currently revisits repeated input subexpressions during traversal
+(no claim of linear runtime over an input DAG). This tranche supplies no
+decoder proof or universal transport proof.
+
+STOP here per user: do not resume WRUH correspondence automatically.
