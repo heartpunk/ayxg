@@ -14,7 +14,7 @@ from ayxg.fp_z3 import FP_Z3_OPERATORS, evaluate_fp_node
 from ayxg.z3 import expr_from_z3, expr_to_z3, sort_from_z3, sort_to_z3, typed_conversion_cache
 from ayxg.substitution import substitute_expr
 from ayxg.codec import dumps, loads
-from ayxg.qfabv import QFAbvContext, QFAbvExpr, QFAbvValuation, FPSort, RoundingModeSort, decode_sort
+from ayxg.qfabv import QFAbvContext, QFAbvExpr, QFAbvValuation, FPSort, RoundingModeSort, BVSort, decode_sort
 from ayxg.eval import eval_expr
 from ayxg.expr import Declaration
 
@@ -109,5 +109,20 @@ class FloatingPointTests(unittest.TestCase):
         vals=(RoundingMode.RNE,nan);key=UnderspecifiedFPKey.from_node(cast,vals)
         self.assertEqual(evaluate_fp_node(cast,vals,FPInterpretation({key:42})),42)
         with self.assertRaises(ValueError): evaluate_fp_node(cast,vals,FPInterpretation({key:256}))
+
+    def test_inactive_underspecified_branch_not_evaluated(self):
+        f=TermSort.fp(8,24);bad=TypedExpr("fp_to_sbv",TermSort.bv(8),(rm_literal(RoundingMode.RTZ),fp_bits(f,0x7fc00000)))
+        node=TypedExpr.ite(TypedExpr.bool_lit(True),TypedExpr.bv_lit(8,1),bad)
+        c=QFAbvContext(())
+        self.assertEqual(eval_expr(QFAbvExpr(c,BVSort(8),node),QFAbvValuation(c,())),1)
+        pred=TypedExpr.equal(bad,TypedExpr.bv_lit(8,0))
+        for op,first in (("bool_and",False),("bool_or",True)):
+            expr=TypedExpr(op,BOOL,(TypedExpr.bool_lit(first),pred))
+            self.assertEqual(eval_expr(QFAbvExpr(c,decode_sort(BOOL),expr),QFAbvValuation(c,())),first)
+
+    def test_dag_preserves_mixed_fp_format(self):
+        a=TypedExpr.var("same",TermSort.fp(8,24));b=TypedExpr.var("same",TermSort.fp(11,53))
+        roots=loads(dumps([a.to_data(),b.to_data()]))
+        self.assertEqual([root.sort for root in roots],[a.sort,b.sort])
 
 if __name__ == "__main__": unittest.main()

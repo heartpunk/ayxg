@@ -37,6 +37,8 @@ def typed_expr_roots_dag(
             signature = (
                 node.op,
                 node.sort.kind,
+                node.sort.exponent_bits,
+                node.sort.significand_bits,
                 node.sort.width,
                 node.sort.index_width,
                 node.sort.value_width,
