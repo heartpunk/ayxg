@@ -224,6 +224,9 @@ def varIndex : Var Γ s → Nat
 structure Writer where
   nodes : Array Json := #[]
   interned : Std.HashMap String Nat := {}
+  visited : Std.HashMap USize Nat := {}
+  /-- Retain input objects until serialization ends, preventing address reuse. -/
+  retained : List (Σ Γ, TypedExpr Γ) := []
 
 /-- Intern by shallow record (child indices, never expanded child trees). -/
 def emit (s : TermSort) (op : String) (args : List Nat := [])
@@ -233,43 +236,48 @@ def emit (s : TermSort) (op : String) (args : List Nat := [])
   let state ← get
   if let some index := state.interned[key]? then return index
   let index := state.nodes.size
-  set ({ nodes := state.nodes.push node, interned := state.interned.insert key index } : Writer)
+  set { state with nodes := state.nodes.push node, interned := state.interned.insert key index }
   return index
 
+private abbrev NodeKey := {Γ : Ctx} → {s : TermSort} → Expr Γ s → Option USize
+
 mutual
-partial def writeExpr {Γ : Ctx} {s : TermSort} (e : Expr Γ s) : StateM Writer Nat := do
-  match s, e with
+private partial def writeExprWith {Γ : Ctx} {s : TermSort} (keyOf : NodeKey) (e : Expr Γ s) : StateM Writer Nat := do
+  let address := keyOf e
+  if let some address := address then
+    if let some index := (← get).visited[address]? then return index
+  let index ← match s, e with
   | _, .var v => emit s "var" [] [("index", toJson (varIndex v))]
   | _, .boolLit b => emit s "bool_lit" [] [("value", toJson b)]
   | _, .bvLit w v => emit s "bv_lit" [] [("value", toJson (v % 2^w))]
   | _, .rmLit r => emit s "rm_lit" [] [("value", toJson (modeString r))]
   | _, .letPar bs body => do
-    let (decls, rhs) ← writeBindings bs
-    emit s "let_par" (rhs ++ [← writeExpr body]) [("bindings", toJson decls)]
-  | _, .fpFromBits _ a => emit s "bv_to_fp" [← writeExpr a]
-  | _, .fpToBits _ a => emit s "fp_to_ieee_bv" [← writeExpr a]
-  | _, .fpFma _ r a b c => emit s "fp_fma" [← writeExpr r, ← writeExpr a, ← writeExpr b, ← writeExpr c]
-  | _, .fpSqrt _ r a => emit s "fp_sqrt" [← writeExpr r, ← writeExpr a]
-  | _, .fpRoundToIntegral _ r a => emit s "fp_round_to_integral" [← writeExpr r, ← writeExpr a]
-  | _, .fpCast _ _ r a => emit s "fp_to_fp" [← writeExpr r, ← writeExpr a]
-  | _, .eqFp _ a b => emit s "eq" [← writeExpr a, ← writeExpr b]
-  | _, .eqRoundingMode a b => emit s "eq" [← writeExpr a, ← writeExpr b]
-  | _, .constArray _ _ a => emit s "const_array" [← writeExpr a]
-  | _, .boolNot a => emit s "bool_not" [← writeExpr a]
-  | _, .boolAnd a b => emit s "bool_and" [← writeExpr a, ← writeExpr b]
-  | _, .boolOr a b => emit s "bool_or" [← writeExpr a, ← writeExpr b]
-  | _, .ite a b c => emit s "ite" [← writeExpr a, ← writeExpr b, ← writeExpr c]
-  | _, .bvNot _ a => emit s "bv_not" [← writeExpr a]
-  | _, .concat _ _ a b => emit s "concat" [← writeExpr a, ← writeExpr b]
-  | _, .select _ _ a b => emit s "select" [← writeExpr a, ← writeExpr b]
-  | _, .store _ _ a b c => emit s "store" [← writeExpr a, ← writeExpr b, ← writeExpr c]
-  | _, .bvUlt _ a b => emit s "bv_ult" [← writeExpr a, ← writeExpr b]
-  | _, .bvUle _ a b => emit s "bv_ule" [← writeExpr a, ← writeExpr b]
-  | _, .bvSlt _ a b => emit s "bv_slt" [← writeExpr a, ← writeExpr b]
-  | _, .bvSle _ a b => emit s "bv_sle" [← writeExpr a, ← writeExpr b]
-  | _, .eqBool a b => emit s "eq" [← writeExpr a, ← writeExpr b]
-  | _, .eqBv _ a b => emit s "eq" [← writeExpr a, ← writeExpr b]
-  | _, .eqArray _ _ a b => emit s "eq" [← writeExpr a, ← writeExpr b]
+    let (decls, rhs) ← writeBindingsWith keyOf bs
+    emit s "let_par" (rhs ++ [← writeExprWith keyOf body]) [("bindings", toJson decls)]
+  | _, .fpFromBits _ a => emit s "bv_to_fp" [← writeExprWith keyOf a]
+  | _, .fpToBits _ a => emit s "fp_to_ieee_bv" [← writeExprWith keyOf a]
+  | _, .fpFma _ r a b c => emit s "fp_fma" [← writeExprWith keyOf r, ← writeExprWith keyOf a, ← writeExprWith keyOf b, ← writeExprWith keyOf c]
+  | _, .fpSqrt _ r a => emit s "fp_sqrt" [← writeExprWith keyOf r, ← writeExprWith keyOf a]
+  | _, .fpRoundToIntegral _ r a => emit s "fp_round_to_integral" [← writeExprWith keyOf r, ← writeExprWith keyOf a]
+  | _, .fpCast _ _ r a => emit s "fp_to_fp" [← writeExprWith keyOf r, ← writeExprWith keyOf a]
+  | _, .eqFp _ a b => emit s "eq" [← writeExprWith keyOf a, ← writeExprWith keyOf b]
+  | _, .eqRoundingMode a b => emit s "eq" [← writeExprWith keyOf a, ← writeExprWith keyOf b]
+  | _, .constArray _ _ a => emit s "const_array" [← writeExprWith keyOf a]
+  | _, .boolNot a => emit s "bool_not" [← writeExprWith keyOf a]
+  | _, .boolAnd a b => emit s "bool_and" [← writeExprWith keyOf a, ← writeExprWith keyOf b]
+  | _, .boolOr a b => emit s "bool_or" [← writeExprWith keyOf a, ← writeExprWith keyOf b]
+  | _, .ite a b c => emit s "ite" [← writeExprWith keyOf a, ← writeExprWith keyOf b, ← writeExprWith keyOf c]
+  | _, .bvNot _ a => emit s "bv_not" [← writeExprWith keyOf a]
+  | _, .concat _ _ a b => emit s "concat" [← writeExprWith keyOf a, ← writeExprWith keyOf b]
+  | _, .select _ _ a b => emit s "select" [← writeExprWith keyOf a, ← writeExprWith keyOf b]
+  | _, .store _ _ a b c => emit s "store" [← writeExprWith keyOf a, ← writeExprWith keyOf b, ← writeExprWith keyOf c]
+  | _, .bvUlt _ a b => emit s "bv_ult" [← writeExprWith keyOf a, ← writeExprWith keyOf b]
+  | _, .bvUle _ a b => emit s "bv_ule" [← writeExprWith keyOf a, ← writeExprWith keyOf b]
+  | _, .bvSlt _ a b => emit s "bv_slt" [← writeExprWith keyOf a, ← writeExprWith keyOf b]
+  | _, .bvSle _ a b => emit s "bv_sle" [← writeExprWith keyOf a, ← writeExprWith keyOf b]
+  | _, .eqBool a b => emit s "eq" [← writeExprWith keyOf a, ← writeExprWith keyOf b]
+  | _, .eqBv _ a b => emit s "eq" [← writeExprWith keyOf a, ← writeExprWith keyOf b]
+  | _, .eqArray _ _ a b => emit s "eq" [← writeExprWith keyOf a, ← writeExprWith keyOf b]
   | _, .bvBin o _ a b =>
     let op := match o with
       | .add => "bv_add"
@@ -283,25 +291,25 @@ partial def writeExpr {Γ : Ctx} {s : TermSort} (e : Expr Γ s) : StateM Writer 
       | .shl => "bv_shl"
       | .lshr => "bv_lshr"
       | .ashr => "bv_ashr"
-    emit s op [← writeExpr a, ← writeExpr b]
+    emit s op [← writeExprWith keyOf a, ← writeExprWith keyOf b]
   | _, .fpUnary o _ a =>
     let op := match o with
       | .abs => "fp_abs"
       | .neg => "fp_neg"
-    emit s op [← writeExpr a]
+    emit s op [← writeExprWith keyOf a]
   | _, .fpBinary o _ a b =>
     let op := match o with
       | .rem => "fp_rem"
       | .min => "fp_min"
       | .max => "fp_max"
-    emit s op [← writeExpr a, ← writeExpr b]
+    emit s op [← writeExprWith keyOf a, ← writeExprWith keyOf b]
   | _, .fpRounded o _ r a b =>
     let op := match o with
       | .add => "fp_add"
       | .sub => "fp_sub"
       | .mul => "fp_mul"
       | .div => "fp_div"
-    emit s op [← writeExpr r, ← writeExpr a, ← writeExpr b]
+    emit s op [← writeExprWith keyOf r, ← writeExprWith keyOf a, ← writeExprWith keyOf b]
   | _, .fpCompare o _ a b =>
     let op := match o with
       | .eq => "fp_eq"
@@ -309,7 +317,7 @@ partial def writeExpr {Γ : Ctx} {s : TermSort} (e : Expr Γ s) : StateM Writer 
       | .le => "fp_le"
       | .gt => "fp_gt"
       | .ge => "fp_ge"
-    emit s op [← writeExpr a, ← writeExpr b]
+    emit s op [← writeExprWith keyOf a, ← writeExprWith keyOf b]
   | _, .fpClassify o _ a =>
     let op := match o with
       | .normal => "fp_is_normal"
@@ -319,26 +327,43 @@ partial def writeExpr {Γ : Ctx} {s : TermSort} (e : Expr Γ s) : StateM Writer 
       | .nan => "fp_is_nan"
       | .negative => "fp_is_negative"
       | .positive => "fp_is_positive"
-    emit s op [← writeExpr a]
-  | _, .fpToBv signed _ _ r a => emit s (if signed then "fp_to_sbv" else "fp_to_ubv") [← writeExpr r, ← writeExpr a]
-  | _, .fpFromBv signed _ _ r a => emit s (if signed then "sbv_to_fp" else "ubv_to_fp") [← writeExpr r, ← writeExpr a]
-  | _, .zeroExt _ n a => emit s "zero_extend" [← writeExpr a] [("amount", toJson n)]
-  | _, .signExt _ n a => emit s "sign_extend" [← writeExpr a] [("amount", toJson n)]
-  | _, .extract spec a => emit s "extract" [← writeExpr a] [("hi", toJson spec.hi), ("lo", toJson spec.lo)]
-partial def writeBindings {Γ Δ : Ctx} (bs : Bindings Γ Δ) : StateM Writer (List Json × List Nat) := do
+    emit s op [← writeExprWith keyOf a]
+  | _, .fpToBv signed _ _ r a => emit s (if signed then "fp_to_sbv" else "fp_to_ubv") [← writeExprWith keyOf r, ← writeExprWith keyOf a]
+  | _, .fpFromBv signed _ _ r a => emit s (if signed then "sbv_to_fp" else "ubv_to_fp") [← writeExprWith keyOf r, ← writeExprWith keyOf a]
+  | _, .zeroExt _ n a => emit s "zero_extend" [← writeExprWith keyOf a] [("amount", toJson n)]
+  | _, .signExt _ n a => emit s "sign_extend" [← writeExprWith keyOf a] [("amount", toJson n)]
+  | _, .extract spec a => emit s "extract" [← writeExprWith keyOf a] [("hi", toJson spec.hi), ("lo", toJson spec.lo)]
+  if let some address := address then
+    modify fun state => { state with
+      visited := state.visited.insert address index
+      retained := ⟨Γ, .mk s e⟩ :: state.retained }
+  return index
+private partial def writeBindingsWith {Γ Δ : Ctx} (keyOf : NodeKey) (bs : Bindings Γ Δ) : StateM Writer (List Json × List Nat) := do
   match Δ, bs with
   | _, .nil => return ([], [])
   | _, .cons name sort rhs rest =>
-    let index ← writeExpr rhs
-    let (decls, indices) ← writeBindings rest
+    let index ← writeExprWith keyOf rhs
+    let (decls, indices) ← writeBindingsWith keyOf rest
     return (Json.mkObj [("name", toJson name), ("sort", sortJson sort)] :: decls, index :: indices)
 end
 
-/-- Canonical shared DAG output. Positional references preserve binding identity. -/
-def writeRootsDag {Γ : Ctx} (roots : List (TypedExpr Γ)) : Json := Id.run do
-  let action := roots.mapM fun (.mk _ e) => writeExpr e
+private def writeRootsDagWith {Γ : Ctx} (keyOf : NodeKey) (roots : List (TypedExpr Γ)) : Json := Id.run do
+  let action := roots.mapM fun (.mk _ e) => writeExprWith keyOf e
   let (indices, state) := action.run {}
   return Json.mkObj [("encoding", toJson "typed-expr-roots-dag-v1"),
     ("roots", toJson indices), ("nodes", toJson state.nodes)]
+
+/-- Runtime identity memoization: check before descending, retain referenced nodes.
+Context erasure is safe for serialization: indices, not names resolved through
+contexts, identify variables; each node carries its serialized sort. -/
+private unsafe def writeRootsDagCached {Γ : Ctx} (roots : List (TypedExpr Γ)) : Json :=
+  writeRootsDagWith (fun e => some (ptrAddrUnsafe e)) roots
+
+/-- Canonical shared DAG output. The logical definition is the structural
+writer; compiled execution adds input-identity memoization to the same traversal.
+This runtime optimization is tested, not asserted as a proved codec theorem. -/
+@[implemented_by writeRootsDagCached]
+def writeRootsDag {Γ : Ctx} (roots : List (TypedExpr Γ)) : Json :=
+  writeRootsDagWith (fun _ => none) roots
 
 end Ayxg.QfAbv.JsonCodec
