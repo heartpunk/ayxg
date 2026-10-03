@@ -32,6 +32,17 @@ def main():
             E.let_par((d,), (E.bv_lit(8,x),), E.let_par((d,), (E.bv_lit(8,y),), E.at(1,bv))),
             E.binary('bv_add', E.let_par((d,), (E.bv_lit(8,x),), shared), E.let_par((d,), (E.bv_lit(8,y),), shared)),
             E.let_par((), (), E.at(1,bv)),
+            E.let_par((Declaration('b', TermSort.bool()),), (E.bool_lit(x < y),),
+                E.ite(E.at(0,TermSort.bool()), E.bv_lit(8,1), E.bv_lit(8,0))),
+            E.let_par((Declaration('m', TermSort.array(2,8)),),
+                (E('const_array',TermSort.array(2,8),(E.bv_lit(8,x),)),),
+                E.select(E.at(0,TermSort.array(2,8)), E.bv_lit(2,y%4))),
+            E.let_par((Declaration('r',TermSort.rounding_mode()),),
+                (E('rm_lit',TermSort.rounding_mode(),value='RNA'),),
+                E.ite(E.equal(E.at(0,TermSort.rounding_mode()), E('rm_lit',TermSort.rounding_mode(),value='RNA')),E.bv_lit(8,1),E.bv_lit(8,0))),
+            E.let_par((Declaration('f',TermSort.fp(8,24)),),
+                (E('bv_to_fp',TermSort.fp(8,24),(E.bv_lit(32,0x3f800000),)),),
+                E.ite(E.equal(E.at(0,TermSort.fp(8,24)), E.at(0,TermSort.fp(8,24))),E.bv_lit(8,1),E.bv_lit(8,0))),
         ]
         for node in examples:
             node = loads(dumps(node))
@@ -52,7 +63,7 @@ def main():
             oracle.process.stdin.close()
             oracle.process.wait(timeout=20)
         oracle.stderr.close()
-    (args.artifacts/'coverage.json').write_text(json.dumps({'comparisons':total,'families':4,'status':'PASS'},indent=2))
+    (args.artifacts/'coverage.json').write_text(json.dumps({'comparisons':total,'families':8,'status':'PASS'},indent=2))
     print(f'{total} Lean/Python/Z3 binding comparisons passed')
 
 if __name__ == '__main__': main()

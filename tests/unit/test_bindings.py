@@ -109,3 +109,30 @@ def test_z3_cache_separates_environments_and_contexts():
             result = expr_to_z3(node, env, ctx, memo=memo)
             assert result.ctx == ctx and result.as_long() == number
             assert expr_to_z3(node, env, ctx, memo=memo) is result
+
+
+@pytest.mark.parametrize('rhs', [
+    E.bool_lit(True), E.bv_lit(8, 17),
+    E('const_array', TermSort.array(2, 8), (E.bv_lit(8, 23),)),
+    E('rm_lit', TermSort.rounding_mode(), value='RNA'),
+    E('bv_to_fp', TermSort.fp(8,24), (E.bv_lit(32,0x3f800000),)),
+])
+def test_parallel_bindings_preserve_every_sort(rhs):
+    node = E.let_par((Declaration('value', rhs.sort),), (rhs,), E.at(0, rhs.sort))
+    assert evaluate(node) == evaluate(rhs)
+    assert evaluate(loads(dumps(node))) == evaluate(rhs)
+    context = z3.Context()
+    solver = z3.Solver(ctx=context)
+    solver.add(expr_to_z3(node, {}, context) != expr_to_z3(rhs, {}, context))
+    assert solver.check() == z3.unsat
+
+
+def test_ordered_array_snapshot_binding():
+    arr = TermSort.array(2,8)
+    original = E('const_array', arr, (E.bv_lit(8,5),))
+    read = E.select(E.at(0,arr), E.bv_lit(2,0))
+    later = E('store',arr,(E.at(0,arr),E.bv_lit(2,0),E.bv_lit(8,9)))
+    node = E.let_par((Declaration('memory',arr),),(original,),
+        E.let_par((Declaration('old_read',B),Declaration('new_memory',arr)),(read,later),
+            E.binary('bv_add',E.at(0,B),E.select(E.at(1,arr),E.bv_lit(2,0)))))
+    assert evaluate(node) == 14
