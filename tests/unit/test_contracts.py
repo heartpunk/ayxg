@@ -154,7 +154,7 @@ class TestSortAndExpressionContracts:
             lambda: TypedExpr("store", w, (x, x, x)),
             lambda: TypedExpr("eq", b, (x, p)),
             lambda: TypedExpr("eq", b, (TypedExpr("const_array", TermSort.array(2,4), (x,)),
-                                       TypedExpr("const_array", TermSort.array(2,4), (x,)))),
+                                       TypedExpr("const_array", TermSort.array(3,4), (x,)))),
             lambda: TypedExpr("bool_lit", b, value=True, name="extra"),
             lambda: TypedExpr("unknown", w),
         ]

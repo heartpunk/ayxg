@@ -27,7 +27,7 @@ class ConversionTests(unittest.TestCase):
                  x==y, z3.Distinct(x,y), z3.If(b,x,y),
                  z3.ZeroExt(8,x), z3.SignExt(8,x), z3.Extract(5,2,x),
                  z3.Concat(x,y,x), z3.K(z3.BitVecSort(8,ctx),x),
-                 z3.Select(a,x), z3.Store(a,x,y)]
+                 z3.Select(a,x), z3.Store(a,x,y), a==z3.Store(a,x,y), z3.Distinct(a,z3.Store(a,x,y))]
         variables = {"x":x,"y":y,"b":b,"c":c,"a":a}
         for term in terms:
             with self.subTest(op=term.decl().name()):
@@ -35,6 +35,19 @@ class ConversionTests(unittest.TestCase):
                 rebuilt = expr_to_z3(typed,variables,ctx)
                 solver=z3.Solver(ctx=ctx); solver.add(term != rebuilt)
                 self.assertEqual(solver.check(),z3.unsat)
+
+    def test_array_equality_ground_witness(self):
+        sort = z3.BitVecSort(4)
+        left = z3.K(sort, z3.BitVecVal(0, 1))
+        right = z3.K(sort, z3.BitVecVal(1, 1))
+        for i in [2, 3, 4, 5, 6, 10, 11]:
+            left = z3.Store(left, z3.BitVecVal(i, 4), z3.BitVecVal(1, 1))
+        for i in [0, 1, 7, 9, 12, 13, 14, 15]:
+            right = z3.Store(right, z3.BitVecVal(i, 4), z3.BitVecVal(0, 1))
+        self.assertEqual(z3.simplify(z3.Select(left, z3.BitVecVal(8, 4))).as_long(), 0)
+        self.assertEqual(z3.simplify(z3.Select(right, z3.BitVecVal(8, 4))).as_long(), 1)
+        solver = z3.Solver(); solver.add(left == right)
+        self.assertEqual(solver.check(), z3.unsat, z3.get_version_string())
 
     def test_sorts_and_declarations(self):
         from ayxg.expr import Declaration

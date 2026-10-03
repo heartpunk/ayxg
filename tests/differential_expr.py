@@ -123,8 +123,10 @@ def cases(draw, root_op: str):
                        (bv_expr(width), bv_expr(width)) if choice == "bv" else (array_expr(), array_expr()))
         expression = TypedExpr.ite(bool_expr(), left, right)
     elif root_op == "eq":
-        expression = (TypedExpr.equal(bool_expr(), bool_expr()) if draw(st.booleans())
-                      else TypedExpr.equal(bv_expr(width), bv_expr(width)))
+        choice = draw(st.sampled_from(["bool", "bv", "array"]))
+        left, right = ((bool_expr(), bool_expr()) if choice == "bool" else
+                       (bv_expr(width), bv_expr(width)) if choice == "bv" else (array_expr(), array_expr()))
+        expression = TypedExpr.equal(left, right)
     elif root_op == "bv_not":
         expression = TypedExpr.unary(root_op, bv_expr(width))
     elif root_op in {"zero_extend", "sign_extend"}:

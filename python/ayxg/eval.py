@@ -62,7 +62,7 @@ def _apply(node: TypedExpr, args: tuple[Value, ...], variables: Mapping[str, Val
     if op == "ite":
         return args[1] if _boolean(args[0]) else args[2]
     if op == "eq":
-        return args[0] == args[1]
+        return _equal_values(args[0], args[1])
     if op == "select":
         array = _array(args[0])
         return dict(array.entries).get(_integer(args[1]), array.default)

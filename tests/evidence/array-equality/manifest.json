@@ -1,0 +1,13 @@
+{
+  "status": "INCOMPLETE: solver dependency defect",
+  "specification": "https://smt-lib.org/theories-ArraysEx.shtml",
+  "const_array_semantics": "https://microsoft.github.io/z3guide/docs/theories/Arrays/",
+  "upstream_fix": "https://github.com/Z3Prover/z3/pull/9572",
+  "inspected_upstream_revision": "ce305e38247a7b9c75953a47e5683ab7bd2bce87",
+  "result": "300 Lean/Python comparisons agree; Z3 4.16 has 3 discrepancies. Pinned Z3 4.13 also fails standalone regression.",
+  "other_solvers": "Hotei cvc5/Bitwuzla/Boolector/Yices all UNSAT on equivalent standard formula; cvc5 --arrays-exp UNSAT on raw and minimal const-array formulas.",
+  "unsafe_flag": "expand_store_eq=True rejects equal finite-domain arrays with complementary complete overrides; not applied.",
+  "lean_limit": "Executable memEqual enumerates the finite index domain; suitable for small-domain oracle, not 64-bit concrete execution.",
+  "review": "Independent source review found no concrete semantic defects; identified the Lean enumeration cost.",
+  "pending": "User decision on a pinned fixed upstream Z3 build and detour extension."
+}

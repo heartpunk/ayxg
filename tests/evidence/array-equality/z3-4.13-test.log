@@ -1,0 +1,16 @@
+exec ${PAGER:-/usr/bin/less} "$0" || exit 1
+Executing tests from //:z3_test
+-----------------------------------------------------------------------------
+F.....
+======================================================================
+FAIL: test_array_equality_ground_witness (__main__.ConversionTests.test_array_equality_ground_witness)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/sophiesmithburg/Library/Caches/bazel/_bazel_sophiesmithburg/7e4f195843e98382df964a55bb8d5a77/sandbox/darwin-sandbox/1/execroot/_main/bazel-out/darwin_arm64-fastbuild/bin/z3_test.runfiles/_main/tests/unit/test_z3.py", line 50, in test_array_equality_ground_witness
+    self.assertEqual(solver.check(), z3.unsat, z3.get_version_string())
+AssertionError: sat != unsat : 4.13.0
+
+----------------------------------------------------------------------
+Ran 6 tests in 0.309s
+
+FAILED (failures=1)

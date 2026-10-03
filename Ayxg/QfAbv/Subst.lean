@@ -75,6 +75,7 @@ def Expr.rename {Γsrc Γdst : Ctx} (ρ : Renaming Γsrc Γdst) :
   | _, .bvSle w lhs rhs => .bvSle w (Expr.rename ρ lhs) (Expr.rename ρ rhs)
   | _, .eqBool lhs rhs => .eqBool (Expr.rename ρ lhs) (Expr.rename ρ rhs)
   | _, .eqBv w lhs rhs => .eqBv w (Expr.rename ρ lhs) (Expr.rename ρ rhs)
+  | _, .eqArray iw vw lhs rhs => .eqArray iw vw (Expr.rename ρ lhs) (Expr.rename ρ rhs)
   | _, .letPar bs body =>
       let renamed := Bindings.renameAndLift ρ bs
       .letPar renamed.2.1 (Expr.rename renamed.2.2 body)
@@ -166,6 +167,9 @@ theorem Expr.eval_rename {Γsrc Γdst : Ctx} (ρ : Renaming Γsrc Γdst)
   | _, .eqBv _ lhs rhs => by
       simp [Expr.rename, Eval.eval, Expr.eval_rename ρ envSrc envDst hρ lhs,
         Expr.eval_rename ρ envSrc envDst hρ rhs]
+  | _, .eqArray _ _ lhs rhs => by
+      simp [Expr.rename, Eval.eval, Expr.eval_rename ρ envSrc envDst hρ lhs,
+        Expr.eval_rename ρ envSrc envDst hρ rhs]
   | _, .letPar bs body => by
       dsimp [Expr.rename, Eval.eval]
       let renamed := Bindings.renameAndLift ρ bs
@@ -254,6 +258,7 @@ def Expr.subst {Γsrc Γdst : Ctx} (σ : Subst Γsrc Γdst) :
   | _, .bvSle w lhs rhs => .bvSle w (Expr.subst σ lhs) (Expr.subst σ rhs)
   | _, .eqBool lhs rhs => .eqBool (Expr.subst σ lhs) (Expr.subst σ rhs)
   | _, .eqBv w lhs rhs => .eqBv w (Expr.subst σ lhs) (Expr.subst σ rhs)
+  | _, .eqArray iw vw lhs rhs => .eqArray iw vw (Expr.subst σ lhs) (Expr.subst σ rhs)
   | _, .letPar bs body =>
       let substituted := Bindings.substAndLift σ bs
       .letPar substituted.2.1 (Expr.subst substituted.2.2 body)
@@ -326,6 +331,8 @@ theorem Expr.eval_subst {Γsrc Γdst : Ctx} (σ : Subst Γsrc Γdst) (env : Env 
   | _, .eqBool lhs rhs => by
       simp [Expr.subst, Eval.eval, Expr.eval_subst σ env lhs, Expr.eval_subst σ env rhs]
   | _, .eqBv _ lhs rhs => by
+      simp [Expr.subst, Eval.eval, Expr.eval_subst σ env lhs, Expr.eval_subst σ env rhs]
+  | _, .eqArray _ _ lhs rhs => by
       simp [Expr.subst, Eval.eval, Expr.eval_subst σ env lhs, Expr.eval_subst σ env rhs]
   | _, .letPar bs body => by
       dsimp [Expr.subst, Eval.eval]

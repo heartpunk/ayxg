@@ -340,9 +340,8 @@ class TypedExpr:
             if (
                 self.sort != BOOL
                 or self.args[0].sort != self.args[1].sort
-                or self.args[0].sort.kind == "array"
             ):
-                raise ArtifactError("eq requires equal non-array operand sorts")
+                raise ArtifactError("eq requires equal operand sorts")
         else:
             raise ArtifactError(f"unknown typed expression operator: {self.op!r}")
 

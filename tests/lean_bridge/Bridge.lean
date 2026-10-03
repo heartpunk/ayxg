@@ -70,7 +70,7 @@ partial def parseExpr (Γ : Ctx) (j : Json) : Except String (TypedExpr Γ) := do
     match ← arg 0 with
     | .mk .bool l => pure (.mk .bool (.eqBool l (← a 1 .bool)))
     | .mk (.bv w) l => pure (.mk .bool (.eqBv w l (← a 1 (.bv w))))
-    | _ => throw "array equality not admitted"
+    | .mk (.array iw vw) l => pure (.mk .bool (.eqArray iw vw l (← a 1 (.array iw vw))))
   | "bv_ult", .bool | "bv_ule", .bool | "bv_slt", .bool | "bv_sle", .bool => do
     let .mk (.bv w) l ← arg 0 | throw "comparison expects BV"
     let r ← a 1 (.bv w)

@@ -84,6 +84,7 @@ inductive Expr : Ctx → TermSort → Type where
   | bvSle : (w : Nat) → Expr Γ (.bv w) → Expr Γ (.bv w) → Expr Γ .bool
   | eqBool : Expr Γ .bool → Expr Γ .bool → Expr Γ .bool
   | eqBv : (w : Nat) → Expr Γ (.bv w) → Expr Γ (.bv w) → Expr Γ .bool
+  | eqArray : (iw vw : Nat) → Expr Γ (.array iw vw) → Expr Γ (.array iw vw) → Expr Γ .bool
   /-- Parallel SMT-LIB-style let: all RHSs in `bs` are typed in the old context `Γ`;
       the body is typed in the extended context `Γ'`. -/
   | letPar : Bindings Γ Γ' → Expr Γ' s → Expr Γ s

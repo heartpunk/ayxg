@@ -1,0 +1,13 @@
+ActiveState=active
+SubState=exited
+InvocationID=a33d9b59da6c41eab19422af29e10c5b
+Result=success
+ExecMainStatus=0
+MemoryPeak=10461184
+CPUUsageNSec=85139000
+CPUQuotaPerSecUSec=1s
+MemoryMax=4294967296
+MemorySwapMax=0
+43000
+100000
+100000

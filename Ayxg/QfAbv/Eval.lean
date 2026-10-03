@@ -55,6 +55,11 @@ namespace Eval
 @[inline] def memConst {iw vw : Nat} (value : BitVec vw) : Mem iw vw :=
   fun _ => value
 
+/-- Extensional equality over the entire finite bit-vector index domain. -/
+def memEqual {iw vw : Nat} (left right : Mem iw vw) : Bool :=
+  (List.range (2 ^ iw)).all fun i =>
+    left (BitVec.ofNat iw i) == right (BitVec.ofNat iw i)
+
 mutual
 
 /-- Total denotation of typed QF_ABV expressions. -/
@@ -82,6 +87,7 @@ def eval : {Γ : Ctx} → Env Γ → {s : TermSort} → Expr Γ s → Denote s
   | _, env, .bool, Expr.bvSle _ lhs rhs => (eval env lhs).sle (eval env rhs)
   | _, env, .bool, Expr.eqBool lhs rhs => eval env lhs == eval env rhs
   | _, env, .bool, Expr.eqBv _ lhs rhs => eval env lhs == eval env rhs
+  | _, env, .bool, Expr.eqArray _ _ lhs rhs => memEqual (eval env lhs) (eval env rhs)
   | _, env, _, Expr.letPar bindings body => eval (evalBindings env bindings) body
 
 /-- Evaluate a parallel binding group: every RHS is evaluated in the old environment. -/

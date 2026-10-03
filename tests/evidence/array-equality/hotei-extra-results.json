@@ -1,0 +1,24 @@
+[
+  {
+    "command": [
+      "cvc5",
+      "--arrays-exp",
+      "/tmp/array-equality-crosscheck-20261002/const-array.smt2"
+    ],
+    "exit": 0,
+    "stdout": "unsat\n",
+    "stderr": "",
+    "elapsed": 0.006917110993526876
+  },
+  {
+    "command": [
+      "cvc5",
+      "--arrays-exp",
+      "/tmp/array-equality-crosscheck-20261002/minimal.smt2"
+    ],
+    "exit": 0,
+    "stdout": "unsat\n",
+    "stderr": "/tmp/array-equality-crosscheck-20261002/minimal.smt2:3.2: No set-logic command was given before this point.\n/tmp/array-equality-crosscheck-20261002/minimal.smt2:3.2: cvc5 will make all theories available.\n/tmp/array-equality-crosscheck-20261002/minimal.smt2:3.2: Consider setting a stricter logic for (likely) better performance.\n/tmp/array-equality-crosscheck-20261002/minimal.smt2:3.2: To suppress this warning in the future use (set-logic ALL).\n",
+    "elapsed": 0.006771561995265074
+  }
+]

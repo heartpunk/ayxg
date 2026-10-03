@@ -1,0 +1,38 @@
+{
+  "version": "4.16.0",
+  "failures": [
+    {
+      "case": 61,
+      "sort": [
+        4,
+        1
+      ],
+      "python": false,
+      "result": "sat",
+      "reason": "",
+      "expression": "(let ((a!1 (store (store (store ((as const (Array (_ BitVec 4) (_ BitVec 1)))\n                                  #b0)\n                                #x2\n                                #b1)\n                         #x3\n                         #b1)\n                  #x4\n                  #b1))\n      (a!3 (store (store (store ((as const (Array (_ BitVec 4) (_ BitVec 1)))\n                                  #b1)\n                                #x0\n                                #b0)\n                         #x1\n                         #b0)\n                  #x7\n                  #b0)))\n(let ((a!2 (store (store (store (store a!1 #x5 #b1) #x6 #b1) #xa #b1) #xb #b1))\n      (a!4 (store (store (store (store a!3 #x9 #b0) #xc #b0) #xd #b0) #xe #b0)))\n  (= a!2 (store a!4 #xf #b0))))"
+    },
+    {
+      "case": 70,
+      "sort": [
+        3,
+        1
+      ],
+      "python": false,
+      "result": "sat",
+      "reason": "",
+      "expression": "(let ((a!1 (store (store (store ((as const (Array (_ BitVec 3) (_ BitVec 1)))\n                                  #b0)\n                                #b000\n                                #b1)\n                         #b001\n                         #b1)\n                  #b011\n                  #b1)))\n  (= (store (store a!1 #b101 #b1) #b110 #b1)\n     (store (store ((as const (Array (_ BitVec 3) (_ BitVec 1))) #b1) #b010 #b0)\n            #b111\n            #b0)))"
+    },
+    {
+      "case": 205,
+      "sort": [
+        3,
+        1
+      ],
+      "python": false,
+      "result": "sat",
+      "reason": "",
+      "expression": "(let ((a!1 (store (store (store ((as const (Array (_ BitVec 3) (_ BitVec 1)))\n                                  #b1)\n                                #b001\n                                #b0)\n                         #b011\n                         #b0)\n                  #b101\n                  #b0))\n      (a!2 (store (store (store ((as const (Array (_ BitVec 3) (_ BitVec 1)))\n                                  #b0)\n                                #b000\n                                #b1)\n                         #b010\n                         #b1)\n                  #b100\n                  #b1)))\n  (= a!1 (store a!2 #b110 #b1)))"
+    }
+  ]
+}

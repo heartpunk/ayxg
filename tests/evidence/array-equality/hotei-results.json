@@ -1,0 +1,106 @@
+[
+  {
+    "exe": "cvc5",
+    "path": "/nix/store/qs5mi5krk7djp2rnw8wszrpri2s7czhi-cvc5-1.3.4/bin/cvc5",
+    "version": "cvc5 1.3.4\ncompiled with GCC version 15.2.0 on Jan  1 1980 00:00:00\n\nCopyright (c) 2009-2026 by the authors and their institutional\naffiliations listed at https://cvc5.github.io/people.html\n\ncvc5 is open-source and is covered by the BSD license (modified).\n\nTHIS SOFTWARE IS PROVIDED AS-IS, WITHOUT ANY WARRANTIES.\nUSE AT YOUR OWN RISK.\n\nThis version of cvc5 is linked against the following non-(L)GPL'ed\nthird party libraries.\n\n  CaDiCaL - Simplified Satisfiability Solver\n  See https://github.com/arminbiere/cadical for copyright information.\n\n  SymFPU - The Symbolic Floating Point Unit\n  See https://github.com/martin-cs/symfpu/tree/CVC4 for copyright information.\n\nThis version of cvc5 is linked against the following third party\nlibraries covered by the LGPLv3 license.\nSee licenses/lgpl-3.0.txt for more information.\n\n  GMP - Gnu Multi Precision Arithmetic Library\n  See http://gmplib.org for copyright information.\n\n  LibPoly polynomial library\n  See https://github.com/SRI-CSL/libpoly for copyright and\n  licensing information.\n\nSee the file COPYING (distributed with the source code, and with\nall binaries) for the full cvc5 copyright, licensing, and (lack of)\nwarranty information.\n\n",
+    "command": [
+      "cvc5",
+      "/tmp/array-equality-crosscheck-20261002/const-array.smt2"
+    ],
+    "elapsed": 0.007991810998646542,
+    "exit": 1,
+    "stdout": "(error \"Cannot handle assertion with term of kind STORE_ALL in this configuration. Try --arrays-exp.\")\n",
+    "stderr": ""
+  },
+  {
+    "exe": "cvc5",
+    "path": "/nix/store/qs5mi5krk7djp2rnw8wszrpri2s7czhi-cvc5-1.3.4/bin/cvc5",
+    "version": "cvc5 1.3.4\ncompiled with GCC version 15.2.0 on Jan  1 1980 00:00:00\n\nCopyright (c) 2009-2026 by the authors and their institutional\naffiliations listed at https://cvc5.github.io/people.html\n\ncvc5 is open-source and is covered by the BSD license (modified).\n\nTHIS SOFTWARE IS PROVIDED AS-IS, WITHOUT ANY WARRANTIES.\nUSE AT YOUR OWN RISK.\n\nThis version of cvc5 is linked against the following non-(L)GPL'ed\nthird party libraries.\n\n  CaDiCaL - Simplified Satisfiability Solver\n  See https://github.com/arminbiere/cadical for copyright information.\n\n  SymFPU - The Symbolic Floating Point Unit\n  See https://github.com/martin-cs/symfpu/tree/CVC4 for copyright information.\n\nThis version of cvc5 is linked against the following third party\nlibraries covered by the LGPLv3 license.\nSee licenses/lgpl-3.0.txt for more information.\n\n  GMP - Gnu Multi Precision Arithmetic Library\n  See http://gmplib.org for copyright information.\n\n  LibPoly polynomial library\n  See https://github.com/SRI-CSL/libpoly for copyright and\n  licensing information.\n\nSee the file COPYING (distributed with the source code, and with\nall binaries) for the full cvc5 copyright, licensing, and (lack of)\nwarranty information.\n\n",
+    "command": [
+      "cvc5",
+      "/tmp/array-equality-crosscheck-20261002/standard-qf-abv.smt2"
+    ],
+    "elapsed": 0.010840387010830455,
+    "exit": 0,
+    "stdout": "unsat\n",
+    "stderr": ""
+  },
+  {
+    "exe": "bitwuzla",
+    "path": "/nix/store/a3nhd3nma0c0as0rcsqkqqaf3fyww7wk-bitwuzla-0.9.1/bin/bitwuzla",
+    "version": "0.9.1\n",
+    "command": [
+      "bitwuzla",
+      "/tmp/array-equality-crosscheck-20261002/const-array.smt2"
+    ],
+    "elapsed": 0.006020070999511518,
+    "exit": 0,
+    "stdout": "unknown\n",
+    "stderr": "[bzla] warning: Equality over constant arrays not fully supported yet\n"
+  },
+  {
+    "exe": "bitwuzla",
+    "path": "/nix/store/a3nhd3nma0c0as0rcsqkqqaf3fyww7wk-bitwuzla-0.9.1/bin/bitwuzla",
+    "version": "0.9.1\n",
+    "command": [
+      "bitwuzla",
+      "/tmp/array-equality-crosscheck-20261002/standard-qf-abv.smt2"
+    ],
+    "elapsed": 0.007360631003393792,
+    "exit": 0,
+    "stdout": "unsat\n",
+    "stderr": ""
+  },
+  {
+    "exe": "boolector",
+    "path": "/nix/store/nk0hi05rcabhvxag74z0f0lbbn4p5bil-boolector-3.2.4/bin/boolector",
+    "version": "3.2.4\n",
+    "command": [
+      "boolector",
+      "/tmp/array-equality-crosscheck-20261002/const-array.smt2"
+    ],
+    "elapsed": 0.00274955399800092,
+    "exit": 1,
+    "stdout": "",
+    "stderr": "[btorslvfun] add_extensionality_lemmas: Found positive equality over two constant arrays, which is currently not supported.\n"
+  },
+  {
+    "exe": "boolector",
+    "path": "/nix/store/nk0hi05rcabhvxag74z0f0lbbn4p5bil-boolector-3.2.4/bin/boolector",
+    "version": "3.2.4\n",
+    "command": [
+      "boolector",
+      "/tmp/array-equality-crosscheck-20261002/standard-qf-abv.smt2"
+    ],
+    "elapsed": 0.0038015090103726834,
+    "exit": 20,
+    "stdout": "unsat\n",
+    "stderr": ""
+  },
+  {
+    "exe": "yices-smt2",
+    "path": "/nix/store/ly9shwfxflcdswib5cdzyj04y3ydgv33-yices-2.7.0/bin/yices-smt2",
+    "version": "Yices 2.7.0\nCopyright SRI International.\nLinked with GMP 6.3.0\nCopyright Free Software Foundation, Inc.\nBuild date: 2026-07-01\nPlatform: x86_64-pc-linux-gnu (release)\nRevision: unknown\n",
+    "command": [
+      "yices-smt2",
+      "/tmp/array-equality-crosscheck-20261002/const-array.smt2"
+    ],
+    "elapsed": 0.0019279459957033396,
+    "exit": 0,
+    "stdout": "(error \"at line 2, column 66: undefined term: const\")\n",
+    "stderr": ""
+  },
+  {
+    "exe": "yices-smt2",
+    "path": "/nix/store/ly9shwfxflcdswib5cdzyj04y3ydgv33-yices-2.7.0/bin/yices-smt2",
+    "version": "Yices 2.7.0\nCopyright SRI International.\nLinked with GMP 6.3.0\nCopyright Free Software Foundation, Inc.\nBuild date: 2026-07-01\nPlatform: x86_64-pc-linux-gnu (release)\nRevision: unknown\n",
+    "command": [
+      "yices-smt2",
+      "/tmp/array-equality-crosscheck-20261002/standard-qf-abv.smt2"
+    ],
+    "elapsed": 0.002382242993917316,
+    "exit": 0,
+    "stdout": "unsat\n",
+    "stderr": ""
+  }
+]
