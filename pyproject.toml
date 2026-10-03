@@ -9,8 +9,8 @@ requires-python = ">=3.11"
 description = "Typed structured transition systems and segment interfaces"
 
 [project.optional-dependencies]
-z3 = ["z3-solver==4.13.0.0"]
-test = ["pytest>=8", "hypothesis>=6", "z3-solver==4.13.0.0"]
+z3 = ["z3-solver==5.1.0.0"]
+test = ["pytest>=8", "hypothesis>=6", "z3-solver==5.1.0.0"]
 
 [tool.setuptools]
 package-dir = {"" = "python"}
