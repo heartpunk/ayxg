@@ -11,6 +11,10 @@ from typing import Any, Iterable, Mapping, cast
 class ArtifactError(ValueError):
     """An expression violates its structural typing contract."""
 
+
+class UnsupportedTheoryError(ArtifactError):
+    """An input uses a theory or operator outside the admitted QF_ABV surface."""
+
 _ID_RE = re.compile(r"[A-Za-z0-9][A-Za-z0-9._:-]*\Z")
 
 def _nonnegative(value: Any, field: str) -> int:

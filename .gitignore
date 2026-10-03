@@ -3,3 +3,6 @@
 /.direnv/
 
 bazel-*
+
+__pycache__/
+*.py[cod]

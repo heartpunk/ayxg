@@ -16,7 +16,7 @@
         };
         in {
           default = pkgs.mkShell {
-            packages = [ pkgs.git pkgs.lean pkgs.python312
+            packages = [ pkgs.git pkgs.lean (pkgs.python312.withPackages (ps: [ ps.z3-solver ps.pytest ps.hypothesis ]))
               (if pkgs.stdenv.isLinux then pkgs.bazel_9 else pkgs.bazelisk)
             ];
           };
