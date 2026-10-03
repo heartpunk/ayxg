@@ -92,9 +92,31 @@ nix develop --command env PYTHONDONTWRITEBYTECODE=1 PYTHONPATH=python:/tmp/ayxg-
 ```
 
 Limits: these checks concern the positive-width SMT-LIB domain, not Lean's
-extra zero-width BV inhabitants. Structural interning shares output nodes;
-the writer currently revisits repeated input subexpressions during traversal
-(no claim of linear runtime over an input DAG). This tranche supplies no
+extra zero-width BV inhabitants. The input-traversal defect noted in this initial tranche is fixed by the
+cache follow-up below. This tranche supplies no
 decoder proof or universal transport proof.
 
 STOP here per user: do not resume WRUH correspondence automatically.
+
+## Input DAG traversal fix — completed
+
+Final validated source: `2b3ae4f05f82cc7b27e90e74e739a444cded172e`.
+Compiled Lean serialization checks a (runtime address, serialized sort) cache
+before recursion and retains each cached input object until serialization ends.
+The existing structural interner still deduplicates equal output nodes.
+The traversal implementation is shared between the structural reference and
+the compiled identity-cache implementation (`implemented_by`); the latter
+uses Lean's runtime pointer primitive. This is tested runtime code, not an
+additional kernel theorem or change to STS semantics.
+
+Final Linux run exit 0:
+- 640 binding round trips and Lean/Python/Z3 comparisons.
+- 480 operator round trips.
+- Depth-80 doubling DAG: 81 distinct nodes; exact shared output preserved,
+  within the oracle's 20-second per-request limit.
+- One runtime variable object reused across Boolean and BV sorts, checking
+  type-erasure-sensitive memoization.
+
+Total codec program checks: 482. All passed. Logs, counts, resource metadata,
+launch script and independent review are in `writer-cache/`.
+No WRUH investigation resumed. Paused after committing the correction.
