@@ -1,0 +1,65 @@
+fetching path input 'path:/Users/sophiesmithburg/workspaces/ayxg-expression-parity'
+.................................................... [ 78%]
+..............                       [100%]
+=============================== warnings summary ===============================
+tests/unit/test_array_equality.py::test_extensional_equality
+tests/unit/test_properties.py::test_update_identity_and_composition_match_execution
+tests/unit/test_properties.py::test_three_update_composition_is_associative_semantically
+tests/unit/test_properties.py::test_simultaneous_swap_reads_the_old_state
+tests/unit/test_properties.py::test_step_composition_agrees_with_sequential_guarded_execution
+tests/unit/test_properties.py::test_substitution_is_simultaneous_and_preserves_evaluation
+tests/unit/test_properties.py::test_guarded_step_composition_is_associative
+tests/unit/test_properties.py::test_array_state_equality_is_extensional_across_canonical_encodings
+  /nix/store/r8vz0amqg4w1yxm0yjlp308rcinq5b9h-python3-3.12.13-env/lib/python3.12/site-packages/hypothesis/internal/conjecture/engine.py:334: HypothesisWarning: The database setting is not configured, and the default location is unusable - falling back to an in-memory database for this session.  path=PosixPath('/Users/sophiesmithburg/workspaces/ayxg-expression-parity/.hypothesis/examples')
+    if self.database_key is not None and self.settings.database is not None:
+
+tests/unit/test_array_equality.py::test_extensional_equality
+tests/unit/test_properties.py::test_update_identity_and_composition_match_execution
+tests/unit/test_properties.py::test_three_update_composition_is_associative_semantically
+tests/unit/test_properties.py::test_simultaneous_swap_reads_the_old_state
+tests/unit/test_properties.py::test_step_composition_agrees_with_sequential_guarded_execution
+tests/unit/test_properties.py::test_substitution_is_simultaneous_and_preserves_evaluation
+tests/unit/test_properties.py::test_guarded_step_composition_is_associative
+tests/unit/test_properties.py::test_array_state_equality_is_extensional_across_canonical_encodings
+  /nix/store/r8vz0amqg4w1yxm0yjlp308rcinq5b9h-python3-3.12.13-env/lib/python3.12/site-packages/hypothesis/internal/conjecture/engine.py:981: HypothesisWarning: The database setting is not configured, and the default location is unusable - falling back to an in-memory database for this session.  path=PosixPath('/Users/sophiesmithburg/workspaces/ayxg-expression-parity/.hypothesis/examples')
+    return self.settings.database
+
+tests/unit/test_array_equality.py::test_extensional_equality
+tests/unit/test_properties.py::test_update_identity_and_composition_match_execution
+tests/unit/test_properties.py::test_three_update_composition_is_associative_semantically
+tests/unit/test_properties.py::test_simultaneous_swap_reads_the_old_state
+tests/unit/test_properties.py::test_step_composition_agrees_with_sequential_guarded_execution
+tests/unit/test_properties.py::test_substitution_is_simultaneous_and_preserves_evaluation
+tests/unit/test_properties.py::test_guarded_step_composition_is_associative
+tests/unit/test_properties.py::test_array_state_equality_is_extensional_across_canonical_encodings
+  /nix/store/r8vz0amqg4w1yxm0yjlp308rcinq5b9h-python3-3.12.13-env/lib/python3.12/site-packages/hypothesis/internal/conjecture/engine.py:1012: HypothesisWarning: The database setting is not configured, and the default location is unusable - falling back to an in-memory database for this session.  path=PosixPath('/Users/sophiesmithburg/workspaces/ayxg-expression-parity/.hypothesis/examples')
+    self.settings.database.fetch(self.database_key), key=shortlex
+
+tests/unit/test_array_equality.py::test_extensional_equality
+tests/unit/test_properties.py::test_update_identity_and_composition_match_execution
+tests/unit/test_properties.py::test_three_update_composition_is_associative_semantically
+tests/unit/test_properties.py::test_simultaneous_swap_reads_the_old_state
+tests/unit/test_properties.py::test_step_composition_agrees_with_sequential_guarded_execution
+tests/unit/test_properties.py::test_substitution_is_simultaneous_and_preserves_evaluation
+tests/unit/test_properties.py::test_guarded_step_composition_is_associative
+tests/unit/test_properties.py::test_array_state_equality_is_extensional_across_canonical_encodings
+  /nix/store/r8vz0amqg4w1yxm0yjlp308rcinq5b9h-python3-3.12.13-env/lib/python3.12/site-packages/hypothesis/internal/conjecture/engine.py:1019: HypothesisWarning: The database setting is not configured, and the default location is unusable - falling back to an in-memory database for this session.  path=PosixPath('/Users/sophiesmithburg/workspaces/ayxg-expression-parity/.hypothesis/examples')
+    extra_corpus = list(self.settings.database.fetch(self.secondary_key))
+
+tests/unit/test_array_equality.py::test_extensional_equality
+tests/unit/test_properties.py::test_update_identity_and_composition_match_execution
+tests/unit/test_properties.py::test_three_update_composition_is_associative_semantically
+tests/unit/test_properties.py::test_simultaneous_swap_reads_the_old_state
+tests/unit/test_properties.py::test_step_composition_agrees_with_sequential_guarded_execution
+tests/unit/test_properties.py::test_substitution_is_simultaneous_and_preserves_evaluation
+tests/unit/test_properties.py::test_guarded_step_composition_is_associative
+tests/unit/test_properties.py::test_array_state_equality_is_extensional_across_canonical_encodings
+  /nix/store/r8vz0amqg4w1yxm0yjlp308rcinq5b9h-python3-3.12.13-env/lib/python3.12/site-packages/hypothesis/internal/conjecture/engine.py:1068: HypothesisWarning: The database setting is not configured, and the default location is unusable - falling back to an in-memory database for this session.  path=PosixPath('/Users/sophiesmithburg/workspaces/ayxg-expression-parity/.hypothesis/examples')
+    pareto_corpus = list(self.settings.database.fetch(self.pareto_key))
+
+../../../../nix/store/r8vz0amqg4w1yxm0yjlp308rcinq5b9h-python3-3.12.13-env/lib/python3.12/site-packages/_pytest/cacheprovider.py:475
+  /nix/store/r8vz0amqg4w1yxm0yjlp308rcinq5b9h-python3-3.12.13-env/lib/python3.12/site-packages/_pytest/cacheprovider.py:475: PytestCacheWarning: cache could not write path /Users/sophiesmithburg/workspaces/ayxg-expression-parity/.pytest_cache/v/cache/nodeids: [Errno 1] Operation not permitted: '/Users/sophiesmithburg/workspaces/ayxg-expression-parity/.pytest_cache/v/cache/nodeids'
+    config.cache.set("cache/nodeids", sorted(self.cached_nodeids))
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+66 passed, 41 warnings, 200 subtests passed in 1.73s
