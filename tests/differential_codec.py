@@ -36,6 +36,16 @@ def main():
         # Oracle startup outside Hypothesis, so infrastructure errors do not shrink.
         from ayxg.expr import TypedExpr
         roundtrip(TypedExpr.bv_lit(8, 0), QFAbvContext(()))
+        # 81 distinct nodes but 2**80 tree paths: identity caching is essential.
+        shared = TypedExpr.bv_lit(8, 1)
+        for _ in range(80):
+            shared = TypedExpr.binary('bv_add', shared, shared)
+        shared_dag = typed_expr_roots_dag((shared, shared))
+        exported = oracle.evaluate({'mode': 'roundtrip', 'declarations': [],
+                                     'expression_dag': shared_dag})
+        assert exported == shared_dag
+        assert len(exported['nodes']) == 81
+        counts['doubling_dag_depth_80'] = 1
         for op in OPS:
             @given(cases(op))
             @settings(max_examples=10, derandomize=True, deadline=None)
