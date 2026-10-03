@@ -9,7 +9,7 @@ if location := os.environ.get("AYXG_LIBSTDCXX_RLOCATION"):
     _LIBSTDCXX = ctypes.CDLL(library, mode=ctypes.RTLD_GLOBAL)
 import z3
 from ayxg.expr import BOOL, ArtifactError, TermSort, TypedExpr
-from ayxg.fp import FPValue, RM, RoundingMode, fp_bits, rm_literal, UnderspecifiedFPError
+from ayxg.fp import FPValue, RM, RoundingMode, fp_bits, rm_literal, UnderspecifiedFPError, FPInterpretation, UnderspecifiedFPKey
 from ayxg.fp_z3 import FP_Z3_OPERATORS, evaluate_fp_node
 from ayxg.z3 import expr_from_z3, expr_to_z3, sort_from_z3, sort_to_z3, typed_conversion_cache
 from ayxg.substitution import substitute_expr
@@ -89,5 +89,25 @@ class FloatingPointTests(unittest.TestCase):
         f=TermSort.fp(8,24);a=TypedExpr.var("a",f);r=rm_literal(RoundingMode.RTZ)
         expr=TypedExpr("fp_to_sbv",TermSort.bv(8),(r,a))
         with self.assertRaises(UnderspecifiedFPError): evaluate_fp_node(expr,(RoundingMode.RTZ,FPValue(f,0x7fc00000)))
+
+
+    def test_explicit_consistent_interpretations(self):
+        f=TermSort.fp(8,24);a=TypedExpr.var("a",f);b=TypedExpr.var("b",f)
+        p,n=FPValue(f,0),FPValue(f,0x80000000)
+        node=TypedExpr("fp_min",f,(a,b));key=UnderspecifiedFPKey.from_node(node,(p,n))
+        choices={key:n};interpretation=FPInterpretation(choices);choices[key]=p
+        self.assertEqual(evaluate_fp_node(node,(p,n),interpretation),n)
+        self.assertEqual(evaluate_fp_node(node,(p,n),interpretation),n)
+        with self.assertRaises(UnderspecifiedFPError): evaluate_fp_node(node,(n,p),interpretation)
+        bad=FPInterpretation({key:FPValue(f,1)})
+        with self.assertRaises(ValueError): evaluate_fp_node(node,(p,n),bad)
+        nan=FPValue(f,0x7fc00000);bits=TypedExpr("fp_to_ieee_bv",TermSort.bv(32),(a,))
+        key=UnderspecifiedFPKey.from_node(bits,(nan,))
+        self.assertEqual(evaluate_fp_node(bits,(nan,),FPInterpretation({key:0xffc12345})),0xffc12345)
+        with self.assertRaises(ValueError): evaluate_fp_node(bits,(nan,),FPInterpretation({key:0}))
+        cast=TypedExpr("fp_to_sbv",TermSort.bv(8),(rm_literal(RoundingMode.RNE),a))
+        vals=(RoundingMode.RNE,nan);key=UnderspecifiedFPKey.from_node(cast,vals)
+        self.assertEqual(evaluate_fp_node(cast,vals,FPInterpretation({key:42})),42)
+        with self.assertRaises(ValueError): evaluate_fp_node(cast,vals,FPInterpretation({key:256}))
 
 if __name__ == "__main__": unittest.main()

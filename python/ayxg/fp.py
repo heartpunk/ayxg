@@ -1,12 +1,15 @@
 """SMT-LIB FP typing and exact values; no host floating-point arithmetic.
 
 SMT FP has one NaN value: payload/sign are intentionally not preserved here.
-Hardware status flags and traps are outside this theory. fp.to_ieee_bv on NaN,
+Hardware status flags and traps are outside this theory. The Z3 extension
+fp.to_ieee_bv (not a standard SMT-LIB operator) is unspecified on NaN;
 invalid fp.to_[su]bv, and fp.min/max signed-zero ties remain underspecified.
 """
 from __future__ import annotations
 from dataclasses import dataclass
 from enum import Enum
+from collections.abc import Mapping
+from types import MappingProxyType
 from .expr import ArtifactError, BOOL, TermSort, TypedExpr
 
 class RoundingMode(str, Enum):
@@ -76,3 +79,48 @@ def rm_literal(mode: RoundingMode) -> TypedExpr:
 def fp_bits(sort: TermSort, bits: int) -> TypedExpr:
     eb, sb = sort.require_fp_widths()
     return TypedExpr("bv_to_fp", sort, (TypedExpr.bv_lit(eb + sb, bits),))
+
+@dataclass(frozen=True)
+class UnderspecifiedFPKey:
+    """Ordered typed arguments identify one application of an SMT function."""
+    op: str
+    result_sort: TermSort
+    arguments: tuple[tuple[TermSort, FPValue | RoundingMode | int], ...]
+
+    @classmethod
+    def from_node(cls, node: TypedExpr, values: tuple) -> UnderspecifiedFPKey:
+        return cls(node.op, node.sort, tuple((a.sort, v) for a, v in zip(node.args, values, strict=True)))
+
+@dataclass(frozen=True)
+class FPInterpretation:
+    """Explicit immutable, consistent choices for underspecified applications.
+
+    No choice is inferred. A missing key raises UnderspecifiedFPError. NaN bit
+    choices must encode NaN; signed-zero ties choose one of the two zeros;
+    invalid FP-to-BV choices may be any value of the declared BV width.
+    """
+    choices: Mapping[UnderspecifiedFPKey, FPValue | int]
+
+    def __post_init__(self) -> None:
+        object.__setattr__(self, "choices", MappingProxyType(dict(self.choices)))
+
+    def resolve(self, node: TypedExpr, values: tuple) -> FPValue | int:
+        key = UnderspecifiedFPKey.from_node(node, values)
+        if key not in self.choices:
+            raise UnderspecifiedFPError(f"missing explicit FP interpretation: {key}")
+        result = self.choices[key]
+        if node.op in {"fp_min", "fp_max"}:
+            eb, sb = node.sort.require_fp_widths()
+            if not isinstance(result, FPValue) or result.sort != node.sort or result.bits not in {0, 1 << (eb + sb - 1)}:
+                raise ArtifactError("signed-zero choice must be a zero of the result sort")
+        elif node.op in {"fp_to_sbv", "fp_to_ubv", "fp_to_ieee_bv"}:
+            if type(result) is not int or not 0 <= result < 1 << node.sort.require_bv_width():
+                raise ArtifactError("FP interpretation result outside declared BV width")
+            if node.op == "fp_to_ieee_bv":
+                f = node.args[0].sort
+                eb, sb = f.require_fp_widths()
+                if (result >> (sb - 1)) & ((1 << eb) - 1) != (1 << eb) - 1 or result & ((1 << (sb - 1)) - 1) == 0:
+                    raise ArtifactError("NaN-to-bits choice must encode NaN")
+        else:
+            raise ArtifactError("interpretation supplied for a defined FP operation")
+        return result

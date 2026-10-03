@@ -2,7 +2,7 @@
 from __future__ import annotations
 import z3
 from .expr import TermSort, TypedExpr
-from .fp import FPValue, RoundingMode, UnderspecifiedFPError, fp_bits
+from .fp import FPValue, RoundingMode, UnderspecifiedFPError, FPInterpretation, fp_bits
 
 _ROUNDING = {"RNE": z3.RNE, "RNA": z3.RNA, "RTP": z3.RTP, "RTN": z3.RTN, "RTZ": z3.RTZ}
 FP_Z3_OPERATORS = {
@@ -80,7 +80,7 @@ def value_to_z3(value: FPValue | RoundingMode | bool | int, sort: TermSort, ctx:
         return z3.BoolVal(value, ctx=ctx)
     return z3.BitVecVal(value, sort.require_bv_width(), ctx=ctx)
 
-def evaluate_fp_node(node: TypedExpr, values: tuple) -> FPValue | RoundingMode | bool | int:
+def evaluate_fp_node(node: TypedExpr, values: tuple, fp_interpretation: FPInterpretation | None = None) -> FPValue | RoundingMode | bool | int:
     """Evaluate defined ground operations; never pick unspecified output bits.
 
     Z3 simplification retains invalid casts and NaN-to-bits as terms. Detect
@@ -95,7 +95,9 @@ def evaluate_fp_node(node: TypedExpr, values: tuple) -> FPValue | RoundingMode |
         eb, sb = node.args[0].sort.require_fp_widths()
         zero_sign = 1 << (eb + sb - 1)
         if isinstance(lhs, FPValue) and isinstance(rhs, FPValue) and {lhs.bits, rhs.bits} == {0, zero_sign}:
-            raise UnderspecifiedFPError("SMT fp.min/max of opposite signed zeros requires an interpretation")
+            if fp_interpretation is None:
+                raise UnderspecifiedFPError("SMT fp.min/max of opposite signed zeros requires an interpretation")
+            return fp_interpretation.resolve(node, values)
     args = tuple(value_to_z3(v, a.sort, ctx) for v, a in zip(values, node.args, strict=True))
     result = z3.simplify(fp_node_to_z3(node, args, ctx))
     if node.sort.kind == "bool" and (z3.is_true(result) or z3.is_false(result)):
@@ -106,4 +108,6 @@ def evaluate_fp_node(node: TypedExpr, values: tuple) -> FPValue | RoundingMode |
         leaf = fp_leaf_from_z3(result, node.sort)
         assert leaf is not None
         return FPValue(node.sort, leaf.args[0].value)
+    if fp_interpretation is not None and node.op in {"fp_to_sbv", "fp_to_ubv", "fp_to_ieee_bv"}:
+        return fp_interpretation.resolve(node, values)
     raise UnderspecifiedFPError(f"ground SMT FP operation has no determined concrete value: {result.sexpr()}")

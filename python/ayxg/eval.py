@@ -11,6 +11,7 @@ from collections.abc import Mapping, Sequence
 from typing import TypeVar, overload
 
 from .expr import ArtifactError, TypedExpr
+from .fp import FPInterpretation
 from .qfabv import (
     ArraySort, BoolSort, BVSort, QFAbvArrayValue, QFAbvExpr, QFAbvStep,
     QFAbvUpdate, QFAbvValuation, Sort, Value,
@@ -42,7 +43,7 @@ def _signed(value: int, width: int) -> int:
     return value - (1 << width) if value & (1 << (width - 1)) else value
 
 
-def _apply(node: TypedExpr, args: tuple[Value, ...], variables: Mapping[str, Value]) -> Value:
+def _apply(node: TypedExpr, args: tuple[Value, ...], variables: Mapping[str, Value], fp_interpretation: FPInterpretation | None = None) -> Value:
     op = node.op
     if op == "var":
         assert node.name is not None
@@ -52,7 +53,7 @@ def _apply(node: TypedExpr, args: tuple[Value, ...], variables: Mapping[str, Val
         return node.value
     if op == "rm_lit" or op.startswith("fp_") or op in {"bv_to_fp", "sbv_to_fp", "ubv_to_fp"}:
         from .fp_z3 import evaluate_fp_node
-        return evaluate_fp_node(node, args)
+        return evaluate_fp_node(node, args, fp_interpretation)
     if op == "const_array":
         iw, vw = node.sort.require_array_widths()
         return QFAbvArrayValue(ArraySort(iw, vw), _integer(args[0]))
@@ -132,7 +133,7 @@ def _apply(node: TypedExpr, args: tuple[Value, ...], variables: Mapping[str, Val
     raise ArtifactError(f"unsupported expression operator {op!r}")
 
 
-def _eval_nodes(roots: Sequence[TypedExpr], variables: Mapping[str, Value]) -> tuple[Value, ...]:
+def _eval_nodes(roots: Sequence[TypedExpr], variables: Mapping[str, Value], fp_interpretation: FPInterpretation | None = None) -> tuple[Value, ...]:
     memo: dict[int, Value] = {}
     for root in roots:
         stack = [(root, False)]
@@ -142,7 +143,7 @@ def _eval_nodes(roots: Sequence[TypedExpr], variables: Mapping[str, Value]) -> t
             if key in memo:
                 continue
             if expanded:
-                memo[key] = _apply(node, tuple(memo[id(arg)] for arg in node.args), variables)
+                memo[key] = _apply(node, tuple(memo[id(arg)] for arg in node.args), variables, fp_interpretation)
             else:
                 stack.append((node, True))
                 stack.extend((arg, False) for arg in reversed(node.args) if id(arg) not in memo)
@@ -150,38 +151,38 @@ def _eval_nodes(roots: Sequence[TypedExpr], variables: Mapping[str, Value]) -> t
 
 
 def eval_exprs(expressions: Sequence[QFAbvExpr[C, Sort]],
-               state: QFAbvValuation[C]) -> tuple[Value, ...]:
+               state: QFAbvValuation[C], fp_interpretation: FPInterpretation | None = None) -> tuple[Value, ...]:
     """Evaluate several roots together, retaining sharing across all of them."""
     if any(expression.context != state.context for expression in expressions):
         raise ValueError("expression and valuation contexts disagree")
     variables = {d.name: value for d, value in zip(state.context.declarations, state.values)}
-    return _eval_nodes(tuple(expression.node for expression in expressions), variables)
+    return _eval_nodes(tuple(expression.node for expression in expressions), variables, fp_interpretation)
 
 
 @overload
-def eval_expr(expression: QFAbvExpr[C, BoolSort], state: QFAbvValuation[C]) -> bool: ...
+def eval_expr(expression: QFAbvExpr[C, BoolSort], state: QFAbvValuation[C], fp_interpretation: FPInterpretation | None = None) -> bool: ...
 @overload
-def eval_expr(expression: QFAbvExpr[C, BVSort], state: QFAbvValuation[C]) -> int: ...
+def eval_expr(expression: QFAbvExpr[C, BVSort], state: QFAbvValuation[C], fp_interpretation: FPInterpretation | None = None) -> int: ...
 @overload
-def eval_expr(expression: QFAbvExpr[C, ArraySort], state: QFAbvValuation[C]) -> QFAbvArrayValue: ...
+def eval_expr(expression: QFAbvExpr[C, ArraySort], state: QFAbvValuation[C], fp_interpretation: FPInterpretation | None = None) -> QFAbvArrayValue: ...
 @overload
-def eval_expr(expression: QFAbvExpr[C, Sort], state: QFAbvValuation[C]) -> Value: ...
-def eval_expr(expression: QFAbvExpr[C, Sort], state: QFAbvValuation[C]) -> Value:
-    return eval_exprs((expression,), state)[0]
+def eval_expr(expression: QFAbvExpr[C, Sort], state: QFAbvValuation[C], fp_interpretation: FPInterpretation | None = None) -> Value: ...
+def eval_expr(expression: QFAbvExpr[C, Sort], state: QFAbvValuation[C], fp_interpretation: FPInterpretation | None = None) -> Value:
+    return eval_exprs((expression,), state, fp_interpretation)[0]
 
 
-def eval_update(update: QFAbvUpdate[C, D], state: QFAbvValuation[C]) -> QFAbvValuation[D]:
+def eval_update(update: QFAbvUpdate[C, D], state: QFAbvValuation[C], fp_interpretation: FPInterpretation | None = None) -> QFAbvValuation[D]:
     """All RHSs see the same old state, even when output names overlap."""
     if update.source != state.context:
         raise ValueError("update and valuation contexts disagree")
-    return QFAbvValuation(update.target, eval_exprs(update.rhs, state))
+    return QFAbvValuation(update.target, eval_exprs(update.rhs, state, fp_interpretation))
 
 
-def eval_step(step: QFAbvStep[C, D], state: QFAbvValuation[C]) -> QFAbvValuation[D] | None:
+def eval_step(step: QFAbvStep[C, D], state: QFAbvValuation[C], fp_interpretation: FPInterpretation | None = None) -> QFAbvValuation[D] | None:
     """Return the guarded successor, or None when the step is disabled."""
-    if not eval_expr(step.guard, state):
+    if not eval_expr(step.guard, state, fp_interpretation):
         return None
-    return eval_update(step.update, state)
+    return eval_update(step.update, state, fp_interpretation)
 
 
 def _equal_values(left: Value, right: Value) -> bool:
@@ -204,9 +205,12 @@ def equal_valuations(left: QFAbvValuation[C], right: QFAbvValuation[C]) -> bool:
 
 class QFAbvSemantics:
     """Interpreter for QFAbvStep data, conforming to RelationSemantics."""
+    def __init__(self, fp_interpretation: FPInterpretation | None = None):
+        self.fp_interpretation = fp_interpretation
+
     def denotes(self, source: QFAbvValuation[C], step: QFAbvStep[C, D],
                 target: QFAbvValuation[D], /) -> bool:
         if source.context != step.update.source or target.context != step.update.target:
             return False
-        successor = eval_step(step, source)
+        successor = eval_step(step, source, self.fp_interpretation)
         return successor is not None and equal_valuations(successor, target)
