@@ -131,7 +131,7 @@ class TestSortAndExpressionContracts:
             {**valid, "op": "bv_add"},
             {**valid, "value": -1},
             {**valid, "value": True},
-            {"op": "var", "sort": valid["sort"], "name": "_bad"},
+            {"op": "var", "sort": valid["sort"], "name": 17},
             {"op": "bool_lit", "sort": {"kind": "bool"}, "value": 0},
         ]
         for data in malformed:

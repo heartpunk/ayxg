@@ -21,6 +21,12 @@ def main():
     bv = TermSort.bv(8)
     d = Declaration('x', bv)
     ctx = QFAbvContext((d, d))
+    # Fail before Hypothesis retries/shrinks an unavailable FFI runtime.
+    startup = oracle.evaluate({'declarations': [], 'values': [],
+        'expression_dag': typed_expr_roots_dag((E.bv_lit(8, 0),))})
+    if startup != {'kind': 'bv', 'value': 0}:
+        oracle.close()
+        raise RuntimeError(f'Lean oracle startup failed: {startup}')
     total = 0
     @given(st.integers(0,255), st.integers(0,255))
     @settings(max_examples=80, derandomize=True, deadline=None)
