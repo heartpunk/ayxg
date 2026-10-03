@@ -55,8 +55,8 @@ theorem symbolicStep_complete {Γinput Γ : Ctx} (model : QFAbvSTS Γ)
       Eval.evalBool ρ successor.guard = true ∧ successor.update.eval ρ = target :=
   (symbolicStep_denotes_iff model input ρ target).2 ⟨admitted, transition⟩
 
-/-- Enumeration preserves edge count/order, including duplicate or infeasible edges. -/
 omit [FPInterpretation] in
+/-- Enumeration preserves edge count, including duplicate or infeasible edges. -/
 theorem symbolicStep_length {Γinput Γ : Ctx} (model : QFAbvSTS Γ)
     (input : QFAbvStep Γinput Γ) :
     (model.symbolicStep input).length = model.steps.length := by
