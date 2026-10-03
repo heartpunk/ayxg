@@ -46,5 +46,15 @@ Corrected sqrt plus1,305 FloatLib/Z35.1 differential fixtures passed: all five
 modes; tiny3/4 and binary32; special/subnormal/random patterns; FMA independent
 third operands plus cancellation/overflow/underflow; casts and finite roundToInt.
 These fixtures are concrete examples, not a full arithmetic proof or exhaustive
-bit-pattern enumeration. Actual lean.py generic-AST correspondence remains
-in flight and is reported separately.
+bit-pattern enumeration. Actual pinned lean.py generic-AST correspondence passed9,350 comparisons:
+34 families, tiny3/4, binary32 and binary64, all five rounding modes. Its explicit
+interpretation chooses canonical NaN bits, invalid casts=0, opposite-zero ties
+with the left sign. These are comparisons, not9,350 distinct bit-patterns;
+mode-independent families repeat deterministic cases across modes. Preserve
+run-v18.json and python-lean-coverage-v18.json for exact commands/counts.
+Reviewer-requested augmentation passed9,419 comparisons, adding69 guaranteed
+NaN/signed-zero equality and comparison, opposite-zero min/max, positive/negative
+half-ULP rounding ties in all five modes, and independent-operand FMA cancellation
+cases. Coverage is recorded per format in python-lean-coverage-v19.json. These
+are closed operation expressions; this does not claim arbitrary deeply nested
+FP program or native hardware correspondence.

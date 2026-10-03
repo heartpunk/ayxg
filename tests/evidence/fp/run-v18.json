@@ -1,0 +1,44 @@
+{
+  "host": "nixos",
+  "physical_host": "entrapta-proxmox",
+  "unit": "ayxg-fp-scoped-v18.service",
+  "source_revision": "5599129ed95acd5ec1caf3756b0ec26a42e8b437",
+  "lean_py_revision": "5c972d1b0ceae56051b1e9960fe907e206a6a3bc",
+  "floatlib_scoped_revision": "222236f04b51cfbf170bd4894542c9ac97436b15",
+  "lean_version": "4.34.0",
+  "z3_version": "5.1.0",
+  "memory_limit_gib": 4,
+  "swap_limit_bytes": 0,
+  "cpu_quota_percent": 800,
+  "allowed_cpus": "2-9",
+  "exit_status": 0,
+  "wall_seconds": 121.35,
+  "cpu_seconds": 116.392,
+  "journal_memory_peak": "753.6M",
+  "observed_live_peak_bytes": 790228992,
+  "comparison_total": 9350,
+  "families": 34,
+  "formats": [
+    [
+      3,
+      4
+    ],
+    [
+      8,
+      24
+    ],
+    [
+      11,
+      53
+    ]
+  ],
+  "rounding_modes": [
+    "RNE",
+    "RNA",
+    "RTP",
+    "RTN",
+    "RTZ"
+  ],
+  "native_candidates_executed": false,
+  "source_reuse": "Normal Lake caches only; unchanged semantic declaration hashes recorded in native-library-projection-v18.json.gz."
+}

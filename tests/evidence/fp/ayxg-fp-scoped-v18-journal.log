@@ -1,0 +1,2 @@
+2026-10-02T23:49:14-07:00 nixos systemd[1106]: Started [systemd-run] /bin/sh -c "/bin/sh /tmp/ayxg-fp-scoped-v18.sh > /tmp/ayxg-fp-scoped-v18.log 2>&1; result=\$?; echo \$result > /tmp/ayxg-fp-scoped-v18.exit; exit \$result".
+2026-10-02T23:51:15-07:00 nixos systemd[1106]: ayxg-fp-scoped-v18.service: Consumed 1min 56.392s CPU time over 2min 1.350s wall clock time, 753.6M memory peak.

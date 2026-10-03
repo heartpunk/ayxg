@@ -1,0 +1,2 @@
+2026-10-02T23:57:24-07:00 nixos systemd[1106]: Started [systemd-run] /bin/sh -c "/bin/sh /tmp/ayxg-fp-ffi-v19.sh > /tmp/ayxg-fp-ffi-v19.log 2>&1; result=\$?; echo \$result > /tmp/ayxg-fp-ffi-v19.exit; exit \$result".
+2026-10-03T00:02:19-07:00 nixos systemd[1106]: ayxg-fp-ffi-v19.service: Consumed 4min 44.126s CPU time over 4min 55.128s wall clock time, 331.2M memory peak.
