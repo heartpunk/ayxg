@@ -224,7 +224,7 @@ def varIndex : Var Γ s → Nat
 structure Writer where
   nodes : Array Json := #[]
   interned : Std.HashMap String Nat := {}
-  visited : Std.HashMap USize Nat := {}
+  visited : Std.HashMap (USize × String) Nat := {}
   /-- Retain input objects until serialization ends, preventing address reuse. -/
   retained : List (Σ Γ, TypedExpr Γ) := []
 
@@ -243,7 +243,7 @@ private abbrev NodeKey := {Γ : Ctx} → {s : TermSort} → Expr Γ s → Option
 
 mutual
 private partial def writeExprWith {Γ : Ctx} {s : TermSort} (keyOf : NodeKey) (e : Expr Γ s) : StateM Writer Nat := do
-  let address := keyOf e
+  let address := (keyOf e).map fun address => (address, (sortJson s).compress)
   if let some address := address then
     if let some index := (← get).visited[address]? then return index
   let index ← match s, e with
@@ -355,7 +355,8 @@ private def writeRootsDagWith {Γ : Ctx} (keyOf : NodeKey) (roots : List (TypedE
 
 /-- Runtime identity memoization: check before descending, retain referenced nodes.
 Context erasure is safe for serialization: indices, not names resolved through
-contexts, identify variables; each node carries its serialized sort. -/
+contexts, identify variables; the cache key also includes the serialized sort because runtime erasure can
+share a polymorphic variable object across distinct sorts. -/
 private unsafe def writeRootsDagCached {Γ : Ctx} (roots : List (TypedExpr Γ)) : Json :=
   writeRootsDagWith (fun e => some (ptrAddrUnsafe e)) roots
 

@@ -133,7 +133,16 @@ def segmentRequest (j : Json) : Except String Json := do
   return Json.mkObj [("direct", toJson (← segmentOutputs segment env fuel)),
     ("shared", toJson shared)]
 
+def innermost (s : TermSort) : Expr [⟨"x", s⟩] s := .var .here
+
+def writerPolymorphic : Json :=
+  let b : Expr [] .bool := .letPar (.cons "x" .bool (.boolLit true) .nil) (innermost .bool)
+  let v : Expr [] (.bv 8) := .letPar (.cons "x" (.bv 8) (.bvLit 8 7) .nil) (innermost (.bv 8))
+  writeRootsDag [.mk .bool b, .mk (.bv 8) v]
+
 def request (j : Json) : Except String Json := do
+  if (j.getObjVal? "mode" >>= Json.getStr?).toOption == some "writer_polymorphic" then
+    return writerPolymorphic
   if (j.getObjVal? "mode" >>= Json.getStr?).toOption == some "segment" then
     return ← segmentRequest j
   if (j.getObjVal? "mode" >>= Json.getStr?).toOption == some "transition" then

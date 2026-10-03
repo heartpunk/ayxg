@@ -46,6 +46,13 @@ def main():
         assert exported == shared_dag
         assert len(exported['nodes']) == 81
         counts['doubling_dag_depth_80'] = 1
+        polymorphic = oracle.evaluate({'mode': 'writer_polymorphic'})
+        values = loads(json.dumps({'schema': 'ayxg-artifact-dag-v1',
+            'expression_dag': polymorphic, 'payload': [{'$expr':0}, {'$expr':1}]}))
+        empty = QFAbvContext(())
+        assert [eval_expr(QFAbvExpr(empty, decode_sort(v.sort), v),
+                         QFAbvValuation(empty, ())) for v in values] == [True, 7]
+        counts['polymorphic_variable_sorts'] = 1
         for op in OPS:
             @given(cases(op))
             @settings(max_examples=10, derandomize=True, deadline=None)
