@@ -54,6 +54,11 @@ def main():
             node = loads(dumps(node))
             py = eval_expr(QFAbvExpr(ctx, decode_sort(bv), node), QFAbvValuation(ctx,(x,y)))
             request = {'declarations':[d.to_data(),d.to_data()], 'values':[x,y], 'expression_dag':typed_expr_roots_dag((node,))}
+            exported = oracle.evaluate(dict(request, mode='roundtrip'))
+            restored = loads(json.dumps({'schema':'ayxg-artifact-dag-v1',
+                'expression_dag':exported, 'payload':{'$expr':0}}))
+            assert restored == node, (restored, node)
+            assert exported == typed_expr_roots_dag((node,)), exported
             lean = oracle.evaluate(request)
             expected = {'kind':'bv', 'value':py}
             zctx = z3.Context()

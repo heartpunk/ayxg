@@ -140,6 +140,8 @@ def request (j : Json) : Except String Json := do
     return ← transitionRequest j
   let ds ← (← field j "declarations").getArr?
   let Γ ← ds.toList.mapM parseDecl
+  if (j.getObjVal? "mode" >>= Json.getStr?).toOption == some "roundtrip" then
+    return writeRootsDag (← parseRootsDag Γ (← field j "expression_dag"))
   let values ← (← field j "values").getArr?
   let env ← parseEnv Γ values.toList
   let expression ← match (j.getObjVal? "expression_dag").toOption with

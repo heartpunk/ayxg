@@ -210,4 +210,135 @@ def parseRootsDag (Γ : Ctx) (j : Json) : Except String (List (TypedExpr Γ)) :=
       parseDagAt nodes Γ index
   action.run' {}
 
+def sortJson : TermSort → Json
+  | .bool => Json.mkObj [("kind", toJson "bool")]
+  | .bv w => Json.mkObj [("kind", toJson "bv"), ("width", toJson w)]
+  | .array i v => Json.mkObj [("kind", toJson "array"), ("index_width", toJson i), ("value_width", toJson v)]
+  | .roundingMode => Json.mkObj [("kind", toJson "rm")]
+  | .fp f => Json.mkObj [("kind", toJson "fp"), ("exponent_bits", toJson f.exponentBits), ("significand_bits", toJson f.significandBits)]
+
+def varIndex : Var Γ s → Nat
+  | .here => 0
+  | .there v => varIndex v + 1
+
+structure Writer where
+  nodes : Array Json := #[]
+  interned : Std.HashMap String Nat := {}
+
+/-- Intern by shallow record (child indices, never expanded child trees). -/
+def emit (s : TermSort) (op : String) (args : List Nat := [])
+    (fields : List (String × Json) := []) : StateM Writer Nat := do
+  let node := Json.mkObj ([("op", toJson op), ("sort", sortJson s), ("args", toJson args)] ++ fields)
+  let key := node.compress
+  let state ← get
+  if let some index := state.interned[key]? then return index
+  let index := state.nodes.size
+  set { nodes := state.nodes.push node, interned := state.interned.insert key index }
+  return index
+
+mutual
+partial def writeExpr {Γ : Ctx} {s : TermSort} (e : Expr Γ s) : StateM Writer Nat := do
+  match e with
+  | .var v => emit s "var" [] [("index", toJson (varIndex v))]
+  | .boolLit b => emit s "bool_lit" [] [("value", toJson b)]
+  | .bvLit w v => emit s "bv_lit" [] [("value", toJson (v % 2^w))]
+  | .rmLit r => emit s "rm_lit" [] [("value", toJson (modeString r))]
+  | .letPar bs body => do
+    let (decls, rhs) ← writeBindings bs
+    emit s "let_par" (rhs ++ [← writeExpr body]) [("bindings", toJson decls)]
+  | .fpFromBits _ a => emit s "bv_to_fp" [← writeExpr a]
+  | .fpToBits _ a => emit s "fp_to_ieee_bv" [← writeExpr a]
+  | .fpFma _ r a b c => emit s "fp_fma" [← writeExpr r, ← writeExpr a, ← writeExpr b, ← writeExpr c]
+  | .fpSqrt _ r a => emit s "fp_sqrt" [← writeExpr r, ← writeExpr a]
+  | .fpRoundToIntegral _ r a => emit s "fp_round_to_integral" [← writeExpr r, ← writeExpr a]
+  | .fpCast _ _ r a => emit s "fp_to_fp" [← writeExpr r, ← writeExpr a]
+  | .eqFp _ a b => emit s "eq" [← writeExpr a, ← writeExpr b]
+  | .eqRoundingMode a b => emit s "eq" [← writeExpr a, ← writeExpr b]
+  | .constArray _ _ a => emit s "const_array" [← writeExpr a]
+  | .boolNot a => emit s "bool_not" [← writeExpr a]
+  | .boolAnd a b => emit s "bool_and" [← writeExpr a, ← writeExpr b]
+  | .boolOr a b => emit s "bool_or" [← writeExpr a, ← writeExpr b]
+  | .ite a b c => emit s "ite" [← writeExpr a, ← writeExpr b, ← writeExpr c]
+  | .bvNot _ a => emit s "bv_not" [← writeExpr a]
+  | .concat _ _ a b => emit s "concat" [← writeExpr a, ← writeExpr b]
+  | .select _ _ a b => emit s "select" [← writeExpr a, ← writeExpr b]
+  | .store _ _ a b c => emit s "store" [← writeExpr a, ← writeExpr b, ← writeExpr c]
+  | .bvUlt _ a b => emit s "bv_ult" [← writeExpr a, ← writeExpr b]
+  | .bvUle _ a b => emit s "bv_ule" [← writeExpr a, ← writeExpr b]
+  | .bvSlt _ a b => emit s "bv_slt" [← writeExpr a, ← writeExpr b]
+  | .bvSle _ a b => emit s "bv_sle" [← writeExpr a, ← writeExpr b]
+  | .eqBool a b => emit s "eq" [← writeExpr a, ← writeExpr b]
+  | .eqBv _ a b => emit s "eq" [← writeExpr a, ← writeExpr b]
+  | .eqArray _ _ a b => emit s "eq" [← writeExpr a, ← writeExpr b]
+  | .bvBin o _ a b =>
+    let op := match o with
+      | .add => "bv_add"
+      | .sub => "bv_sub"
+      | .mul => "bv_mul"
+      | .udiv => "bv_udiv"
+      | .urem => "bv_urem"
+      | .and => "bv_and"
+      | .or => "bv_or"
+      | .xor => "bv_xor"
+      | .shl => "bv_shl"
+      | .lshr => "bv_lshr"
+      | .ashr => "bv_ashr"
+    emit s op [← writeExpr a, ← writeExpr b]
+  | .fpUnary o _ a =>
+    let op := match o with
+      | .abs => "fp_abs"
+      | .neg => "fp_neg"
+    emit s op [← writeExpr a]
+  | .fpBinary o _ a b =>
+    let op := match o with
+      | .rem => "fp_rem"
+      | .min => "fp_min"
+      | .max => "fp_max"
+    emit s op [← writeExpr a, ← writeExpr b]
+  | .fpRounded o _ r a b =>
+    let op := match o with
+      | .add => "fp_add"
+      | .sub => "fp_sub"
+      | .mul => "fp_mul"
+      | .div => "fp_div"
+    emit s op [← writeExpr r, ← writeExpr a, ← writeExpr b]
+  | .fpCompare o _ a b =>
+    let op := match o with
+      | .eq => "fp_eq"
+      | .lt => "fp_lt"
+      | .le => "fp_le"
+      | .gt => "fp_gt"
+      | .ge => "fp_ge"
+    emit s op [← writeExpr a, ← writeExpr b]
+  | .fpClassify o _ a =>
+    let op := match o with
+      | .normal => "fp_is_normal"
+      | .subnormal => "fp_is_subnormal"
+      | .zero => "fp_is_zero"
+      | .infinite => "fp_is_infinite"
+      | .nan => "fp_is_nan"
+      | .negative => "fp_is_negative"
+      | .positive => "fp_is_positive"
+    emit s op [← writeExpr a]
+  | .fpToBv signed _ _ r a => emit s (if signed then "fp_to_sbv" else "fp_to_ubv") [← writeExpr r, ← writeExpr a]
+  | .fpFromBv signed _ _ r a => emit s (if signed then "sbv_to_fp" else "ubv_to_fp") [← writeExpr r, ← writeExpr a]
+  | .zeroExt _ n a => emit s "zero_extend" [← writeExpr a] [("amount", toJson n)]
+  | .signExt _ n a => emit s "sign_extend" [← writeExpr a] [("amount", toJson n)]
+  | .extract spec a => emit s "extract" [← writeExpr a] [("hi", toJson spec.hi), ("lo", toJson spec.lo)]
+partial def writeBindings {Γ Δ : Ctx} (bs : Bindings Γ Δ) : StateM Writer (List Json × List Nat) := do
+  match bs with
+  | .nil => return ([], [])
+  | .cons name sort rhs rest =>
+    let index ← writeExpr rhs
+    let (decls, indices) ← writeBindings rest
+    return (Json.mkObj [("name", toJson name), ("sort", sortJson sort)] :: decls, index :: indices)
+end
+
+/-- Canonical shared DAG output. Positional references preserve binding identity. -/
+def writeRootsDag {Γ : Ctx} (roots : List (TypedExpr Γ)) : Json := Id.run do
+  let action := roots.mapM fun (.mk _ e) => writeExpr e
+  let (indices, state) := action.run {}
+  return Json.mkObj [("encoding", toJson "typed-expr-roots-dag-v1"),
+    ("roots", toJson indices), ("nodes", toJson state.nodes)]
+
 end Ayxg.QfAbv.JsonCodec
