@@ -40,3 +40,11 @@ jobs:
         env:
           PYTHONPATH: python
         run: python -m pytest -p no:cacheprovider -q tests/unit
+
+      - name: Build Lean and Bazel targets, then run Bazel tests
+        run: |
+          nix develop --no-write-lock-file --command bash -euo pipefail -c '
+            lake build
+            bazel build //...
+            bazel test //... --test_output=errors
+          '
