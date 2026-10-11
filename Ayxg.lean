@@ -6,3 +6,4 @@ import Ayxg.QfAbv.SymbolicStep
 import Ayxg.QfAbv.JsonCodec
 
 import Ayxg.LTS.QfAbv.Region
+import Ayxg.LTS.QfAbv.RegionPre
