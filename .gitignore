@@ -4,7 +4,10 @@
 
 bazel-*
 
+# Generated Python bytecode and cache directories (including previously tracked files).
 __pycache__/
+*.pyc
+*.pyo
 *.py[cod]
 .hypothesis/
 .pytest_cache/
