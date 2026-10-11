@@ -8,10 +8,15 @@ namespace QfAbv
 
 open _root_.Ayxg.QfAbv
 
-/-- A Henzinger–Majumdar–Raskin region algebra for an existing canonical
-QF_ABV guarded-update graph. Complete finite enumerations make emptiness
-executable; an explicit observable family supplies the paper's observations.
-The states and transition relation remain those of `system.toLTS`. -/
+/-- Semantic Henzinger–Majumdar–Raskin region-algebra laws for an existing
+canonical QF_ABV guarded-update graph. Complete finite enumerations certify
+the Boolean emptiness scan; an explicit observable family supplies the paper's
+observations. The states and transition relation remain those of `system.toLTS`.
+
+This structure does not establish effective encodings or executable
+implementations of arbitrary caller-supplied `Region.formulaAt`, `system.transAt`,
+or `FPInterpretation` functions. Those are needed for the paper's computability
+requirements. -/
 structure RegionAlgebra (C : Type) (Γ : Ctx)
     [DecidableEq C] [_root_.Ayxg.QfAbv.FPInterpretation] where
   system : SymbolicTransitionSystem C Γ (SymbolicTransition C Γ)

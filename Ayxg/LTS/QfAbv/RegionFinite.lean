@@ -9,9 +9,10 @@ open _root_.Ayxg.QfAbv
 
 namespace RegionAlgebra
 
-/-- Build the region algebra using AYXG's complete enumeration of QF_ABV
-environments. The caller supplies the finite control sites and observables of
-the existing transition system. -/
+/-- Build the semantic region-algebra package using AYXG's complete QF_ABV
+environment enumeration. The caller supplies the finite control sites and
+observables of the existing transition system. Effective execution additionally
+depends on the caller-supplied functions noted in `RegionAlgebra`. -/
 def ofFiniteControls {C : Type} [DecidableEq C]
     [_root_.Ayxg.QfAbv.FPInterpretation] {Γ : Ctx}
     (system : SymbolicTransitionSystem C Γ (SymbolicTransition C Γ))

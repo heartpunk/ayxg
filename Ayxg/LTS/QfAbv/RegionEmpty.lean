@@ -17,8 +17,8 @@ def empty [_root_.Ayxg.QfAbv.FPInterpretation]
     envs.all fun env =>
       !(region.member { control := c, env := env })
 
-/-- Under complete enumerations, executable emptiness agrees with the
-semantic absence of any configuration in the region. -/
+/-- Under complete enumerations, the Boolean scan agrees with the semantic
+absence of any configuration in the region. -/
 theorem empty_eq_true_iff [_root_.Ayxg.QfAbv.FPInterpretation]
     {C : Type} {Γ : Ctx} (controls : List C) (envs : List (Env Γ))
     (hcontrols : ∀ c : C, c ∈ controls)
