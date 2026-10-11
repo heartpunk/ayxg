@@ -3,8 +3,7 @@
   inputs.ifrl.url = "git+ssh://git@github.com/heartpunk/ifrl.git?rev=812c5201e78febb0d863a2af5b27dc0a2fbd085a";
   inputs.nixpkgs.follows = "ifrl/nixpkgs";
   inputs.lean4-nix = {
-    url = "github:heartpunk/lean4-nix/118d8caf67fbe0975ea014bcd6d501951219e6d8";
-    inputs.nixpkgs.follows = "ifrl/nixpkgs";
+    follows = "ifrl/lean4-nix";
   };
   outputs = { nixpkgs, lean4-nix, ifrl, ... }:
     let
@@ -17,7 +16,7 @@
         };
         in {
           default = pkgs.mkShell {
-          inputsFrom = [ ifrl.devShells.${system}.default ];
+            inputsFrom = [ ifrl.devShells.${system}.default ];
             packages = [ pkgs.git pkgs.lean pkgs.python312
               (if pkgs.stdenv.isLinux then pkgs.bazel_9 else pkgs.bazelisk)
             ];
