@@ -7,3 +7,4 @@ import Ayxg.QfAbv.JsonCodec
 
 import Ayxg.LTS.QfAbv.Region
 import Ayxg.LTS.QfAbv.RegionPre
+import Ayxg.LTS.QfAbv.RegionMember
