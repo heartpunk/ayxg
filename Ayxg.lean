@@ -10,3 +10,4 @@ import Ayxg.LTS.QfAbv.RegionPre
 import Ayxg.LTS.QfAbv.RegionMember
 import Ayxg.LTS.QfAbv.RegionObservables
 import Ayxg.LTS.QfAbv.RegionEmpty
+import Ayxg.LTS.QfAbv.RegionAlgebra
