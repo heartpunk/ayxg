@@ -15,3 +15,4 @@ import Ayxg.LTS.QfAbv.RegionAlgebra
 import Ayxg.LTS.QfAbv.FiniteEnv
 import Ayxg.LTS.QfAbv.RegionFinite
 import Ayxg.LTS.QfAbv.WholeStateRegionAlgebra
+import Ayxg.LTS.QfAbv.WholeStateRegionStep
