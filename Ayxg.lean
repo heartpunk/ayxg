@@ -12,3 +12,4 @@ import Ayxg.LTS.QfAbv.RegionObservables
 import Ayxg.LTS.QfAbv.RegionEmpty
 import Ayxg.LTS.QfAbv.RegionAlgebra
 import Ayxg.LTS.QfAbv.FiniteEnv
+import Ayxg.LTS.QfAbv.RegionFinite
