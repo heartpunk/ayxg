@@ -5,7 +5,11 @@
   inputs.lean4-nix = {
     follows = "ifrl/lean4-nix";
   };
-  outputs = { nixpkgs, lean4-nix, ifrl, ... }:
+  inputs.floatlib-src = {
+    url = "github:lean-dojo/FloatLib/1e83f09ed8c41a953cf8f93d26c210778177b94a";
+    flake = false;
+  };
+  outputs = { nixpkgs, lean4-nix, ifrl, floatlib-src, ... }:
     let
       systems = [ "aarch64-darwin" "x86_64-linux" ];
     in {
@@ -14,12 +18,21 @@
           inherit system;
           overlays = [ (lean4-nix.readToolchainFile ./lean-toolchain) ];
         };
+        in let floatlib = pkgs.applyPatches {
+          name = "floatlib-ayxg-scoped";
+          src = floatlib-src;
+          patches = [ ./nix/floatlib-smt-rna.patch ];
+        };
         in {
           default = pkgs.mkShell {
             inputsFrom = [ ifrl.devShells.${system}.default ];
             packages = [ pkgs.git pkgs.lean pkgs.python312
               (if pkgs.stdenv.isLinux then pkgs.bazel_9 else pkgs.bazelisk)
             ];
+            shellHook = ''
+              export AYXG_FLOATLIB_SOURCE="${floatlib}"
+              export AYXG_FLOATLIB_SOURCE_KEY="222236f04b51cfbf170bd4894542c9ac97436b15"
+            '';
           };
         });
     };
