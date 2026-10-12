@@ -34,6 +34,20 @@
               export AYXG_FLOATLIB_SOURCE_KEY="222236f04b51cfbf170bd4894542c9ac97436b15"
             '';
           };
+          # CI needs only the project toolchain. The full shared shell also
+          # realizes Angr's Python closure, whose upstream Mistune timing tests
+          # can fail on loaded builders before AYXG checks start.
+          ci = pkgs.mkShell {
+            packages = [ pkgs.git pkgs.lean pkgs.python312
+              (if pkgs.stdenv.isLinux then pkgs.bazel_9 else pkgs.bazelisk)
+            ];
+            AYXG_NIX_LIBSTDCXX_ROOT =
+              pkgs.lib.optionalString pkgs.stdenv.isLinux "${pkgs.stdenv.cc.cc.lib}";
+            shellHook = ''
+              export AYXG_FLOATLIB_SOURCE="${floatlib}"
+              export AYXG_FLOATLIB_SOURCE_KEY="222236f04b51cfbf170bd4894542c9ac97436b15"
+            '';
+          };
         });
     };
 }
