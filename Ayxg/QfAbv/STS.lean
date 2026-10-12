@@ -140,6 +140,7 @@ end QFAbvStep
 existing proofs and compatibility. New models should use
 `Ayxg.LTS.QfAbv.SymbolicTransitionSystem`, with `C = Unit` when control is
 already represented in `Γ`. See the repository's root `AGENTS.md`. -/
+@[deprecated "Use Ayxg.LTS.QfAbv.SymbolicTransitionSystem instead" (since := "2026-10-11")]
 structure QFAbvSTS (Γ : Ctx) where
   steps : List (QFAbvStep Γ Γ)
 
