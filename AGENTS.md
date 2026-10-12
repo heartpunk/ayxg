@@ -11,10 +11,11 @@ existing proofs and compatibility during migration. Do not add new public APIs,
 tests, or examples that depend on it. When updating existing code, prefer the
 source-indexed interface and preserve the current step relation.
 
-This is an API-status and contribution rule, not a removal of QF_ABV support or
-a compile-time Lean deprecation attribute. The QF_ABV context, expressions,
-steps, guards, and updates remain supported. The generic `Ayxg.STS State Label`
-is a separate general abstraction and is not deprecated by this guidance.
+This is an API-status and contribution rule, not a removal of QF_ABV support.
+The legacy `QFAbvSTS` type emits a Lean deprecation warning when referenced;
+the QF_ABV context, expressions, steps, guards, and updates remain supported.
+The generic `Ayxg.STS State Label` is a separate general abstraction and is not
+deprecated by this guidance.
 
 When constructing a source-indexed model, ensure each edge stored at `c` has
 semantic source `c`; keep the source index and edge semantics consistent.
