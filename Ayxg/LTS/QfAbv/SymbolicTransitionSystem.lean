@@ -11,9 +11,10 @@ open _root_.Ayxg.QfAbv
 
 /-- Source-keyed symbolic transition system over a typed QF_ABV environment.
 
-This is the active QF_ABV transition-system layer: control sites map to
-symbolic edges whose labels carry guard/update transformer payloads. Its LTS
-view is direct; there is no intermediate concrete machine layer. -/
+This is the supported QF_ABV transition-system interface for new models:
+control sites map to symbolic edges whose labels carry guard/update transformer
+payloads. Its LTS view is direct; there is no intermediate concrete machine
+layer. See the repository's root `AGENTS.md` for the API policy. -/
 structure SymbolicTransitionSystem (C : Type) (Γ : Ctx) (E : Type) where
   edgeSemantics : SymbolicEdgeSemantics C Γ E
   transAt : C → List E
