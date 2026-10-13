@@ -65,19 +65,16 @@
         "rust-overlay": "rust-overlay"
       },
       "locked": {
-        "allRefs": true,
-        "lastModified": 1791749813,
-        "narHash": "sha256-WYXFwnA6ErqnAsxn7+npy5GtAxmSa9TFnZe8IAq9my0=",
-        "ref": "ci/wave-1",
-        "rev": "5cca8cb3235ebe8288e43a254d05380b10189f37",
-        "revCount": 6,
+        "lastModified": 1791842794,
+        "narHash": "sha256-ymrIyuSuyWgR/JwhWlSXuP5z9s4VsmJWw83tMqLfS/c=",
+        "ref": "main",
+        "rev": "5592161bc01eab29892ab32e8639c7ab318bd9f4",
+        "revCount": 15,
         "type": "git",
         "url": "ssh://git@github.com/heartpunk/ifrl.git"
       },
       "original": {
-        "allRefs": true,
-        "ref": "ci/wave-1",
-        "rev": "5cca8cb3235ebe8288e43a254d05380b10189f37",
+        "ref": "main",
         "type": "git",
         "url": "ssh://git@github.com/heartpunk/ifrl.git"
       }
@@ -91,17 +88,17 @@
         ]
       },
       "locked": {
-        "lastModified": 1791749769,
-        "narHash": "sha256-3CxjESD04qPMeVtO+Dsedr+sHl4Un0g1BYMt/wnRmx0=",
+        "lastModified": 1791835095,
+        "narHash": "sha256-exAyn2EJ0jeWTElQNsMzcTYK28EjR1cZwYFkEihp/KY=",
         "owner": "heartpunk",
         "repo": "lean4-nix",
-        "rev": "c118a8ef6162f286bdaecfeba73f7f42d26e0103",
+        "rev": "016ac348e901dc8d924c0d768a5ca9aee86e1763",
         "type": "github"
       },
       "original": {
         "owner": "heartpunk",
         "repo": "lean4-nix",
-        "rev": "c118a8ef6162f286bdaecfeba73f7f42d26e0103",
+        "rev": "016ac348e901dc8d924c0d768a5ca9aee86e1763",
         "type": "github"
       }
     },

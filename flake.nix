@@ -1,6 +1,6 @@
 {
   description = "AYXG shared formal STS library environment";
-  inputs.ifrl.url = "git+ssh://git@github.com/heartpunk/ifrl.git?ref=ci/wave-1&rev=5cca8cb3235ebe8288e43a254d05380b10189f37&allRefs=1";
+  inputs.ifrl.url = "git+ssh://git@github.com/heartpunk/ifrl.git?ref=main";
   inputs.nixpkgs.follows = "ifrl/nixpkgs";
   inputs.lean4-nix = {
     follows = "ifrl/lean4-nix";
@@ -23,31 +23,29 @@
           src = floatlib-src;
           patches = [ ./nix/floatlib-smt-rna.patch ];
         };
-        in {
-          default = pkgs.mkShell {
-            inputsFrom = [ ifrl.devShells.${system}.default ];
-            packages = [ pkgs.git pkgs.lean pkgs.python312
-              (if pkgs.stdenv.isLinux then pkgs.bazel_9 else pkgs.bazelisk)
-            ];
-            shellHook = ''
-              export AYXG_FLOATLIB_SOURCE="${floatlib}"
-              export AYXG_FLOATLIB_SOURCE_KEY="222236f04b51cfbf170bd4894542c9ac97436b15"
-            '';
-          };
-          # CI needs only the project toolchain. The full shared shell also
-          # realizes Angr's Python closure, whose upstream Mistune timing tests
-          # can fail on loaded builders before AYXG checks start.
-          ci = pkgs.mkShell {
-            packages = [ pkgs.git pkgs.lean pkgs.python312
-              (if pkgs.stdenv.isLinux then pkgs.bazel_9 else pkgs.bazelisk)
-            ];
+        in let z3Python = import ./nix/z3-python.nix { inherit pkgs; };
+          python = pkgs.python312.withPackages (_: [ z3Python ]);
+          # Use the same platform-specific Bazel package as the shared runtime.
+          bazel = import (ifrl.outPath + "/nix/bazel.nix") { inherit pkgs; };
+          projectShell = {
+            packages = [ pkgs.git pkgs.lean python bazel ];
             AYXG_NIX_LIBSTDCXX_ROOT =
               pkgs.lib.optionalString pkgs.stdenv.isLinux "${pkgs.stdenv.cc.cc.lib}";
             shellHook = ''
+              export PATH="${python}/bin:$PATH"
               export AYXG_FLOATLIB_SOURCE="${floatlib}"
               export AYXG_FLOATLIB_SOURCE_KEY="222236f04b51cfbf170bd4894542c9ac97436b15"
             '';
           };
+        in {
+          # The full contributor shell includes the shared runtime.
+          default = pkgs.mkShell (projectShell // {
+            inputsFrom = [ ifrl.devShells.${system}.default ];
+          });
+          # CI needs only the project toolchain. The full shared shell also
+          # realizes Angr's Python closure, whose upstream Mistune timing tests
+          # can fail on loaded builders before AYXG checks start.
+          ci = pkgs.mkShell projectShell;
         });
     };
 }
