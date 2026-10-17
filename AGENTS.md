@@ -6,16 +6,13 @@ transition-system interface. Its states carry a QF_ABV environment `Γ` and a
 control value `C`; its edges carry QF_ABV guard/update semantics. Use `C = Unit`
 when the model has no separate structural control site.
 
-`Ayxg.QfAbv.QFAbvSTS Γ` is deprecated for new dependencies and retained for
-existing proofs and compatibility during migration. Do not add new public APIs,
-tests, or examples that depend on it. When updating existing code, prefer the
-source-indexed interface and preserve the current step relation.
+The old Lean `Ayxg.QfAbv.QFAbvSTS Γ` interface has been removed. Use the
+source-indexed interface and preserve the complete labeled step relation when
+migrating existing code. `QFAbvStep` remains available from
+`Ayxg.QfAbv.Step`; the QF_ABV context, expressions, guards, and updates remain
+supported. The generic `Ayxg.STS State Label` is a separate abstraction.
 
-This is an API-status and contribution rule, not a removal of QF_ABV support.
-The legacy `QFAbvSTS` type emits a Lean deprecation warning when referenced;
-the QF_ABV context, expressions, steps, guards, and updates remain supported.
-The generic `Ayxg.STS State Label` is a separate general abstraction and is not
-deprecated by this guidance.
+The Python `ayxg.QFAbvSTS` is a separate API and is not this Lean interface.
 
 When constructing a source-indexed model, ensure each edge stored at `c` has
 semantic source `c`; keep the source index and edge semantics consistent.

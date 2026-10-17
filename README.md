@@ -2,7 +2,9 @@
 
 A symbolic transition system library with Python and Lean implementations and tested execution correspondence.
 
-For Lean, use `Ayxg.LTS.QfAbv.SymbolicTransitionSystem C Γ E`; avoid `Ayxg.QfAbv.QFAbvSTS Γ` for new work (it remains for compatibility).
+For Lean, use `Ayxg.LTS.QfAbv.SymbolicTransitionSystem C Γ E`. The former Lean
+`Ayxg.QfAbv.QFAbvSTS` wrapper has been removed; `QFAbvStep` is provided by
+`Ayxg.QfAbv.Step`. The similarly named Python API is separate.
 
 ayxg models give a few useful affordances:
 

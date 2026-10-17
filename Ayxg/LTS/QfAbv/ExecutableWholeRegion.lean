@@ -39,9 +39,10 @@ def diff {Γ : Ctx} (left right : WholeRegion Γ) : WholeRegion Γ :=
 `Region.pre` folds that list into a Boolean formula; the sole control site is
 selected here, so the returned value is expression syntax rather than a
 function-valued region. -/
-def pre {Γ : Ctx} (model : QFAbvSTS Γ)
+def pre {Γ : Ctx}
+    (model : SymbolicTransitionSystem Unit Γ (SymbolicTransition Unit Γ))
     (target : WholeRegion Γ) : WholeRegion Γ :=
-  ⟨(Region.pre model.toControlSystem target.toRegion).formulaAt ()⟩
+  ⟨(Region.pre model target.toRegion).formulaAt ()⟩
 
 theorem member_eq_true_iff {Γ : Ctx} (region : WholeRegion Γ)
     (env : Env Γ) : region.member env = true ↔ region.Holds env := by
@@ -69,25 +70,34 @@ theorem holds_diff_iff {Γ : Ctx} (left right : WholeRegion Γ)
 
 /-- Exact one-step HMR predecessor for the original whole-state transition
 relation, using the same finite expression syntax as the other operations. -/
-theorem holds_pre_iff {Γ : Ctx} (model : QFAbvSTS Γ)
+theorem holds_pre_iff {Γ : Ctx}
+    (model : SymbolicTransitionSystem Unit Γ (SymbolicTransition Unit Γ))
+    (canonical : model.edgeSemantics = SymbolicTransition.edgeSemantics)
     (target : WholeRegion Γ) (source : Env Γ) :
     (pre model target).Holds source ↔
-      ∃ result : Env Γ,
-        model.toLTS.canStep source result ∧ target.Holds result := by
-  have hpre := Region.holds_pre_iff model.toControlSystem rfl
-    target.toRegion ⟨(), source⟩
+      ∃ (edge : SymbolicTransition Unit Γ) (result : Env Γ),
+        model.toLTS.Tr ⟨(), source⟩ edge ⟨(), result⟩ ∧
+          target.Holds result := by
+  have hpre := Region.holds_pre_iff model canonical target.toRegion ⟨(), source⟩
   constructor
   · intro h
-    obtain ⟨edge, successor, hstep, htarget⟩ := hpre.mp h
+    have h' : (Region.pre model target.toRegion).Holds ⟨(), source⟩ := by
+      change (pre model target).Holds source
+      exact h
+    obtain ⟨edge, successor, hstep, htarget⟩ := hpre.mp h'
     cases successor with
     | mk control result =>
       cases control
-      refine ⟨result, ?_, ?_⟩
-      · exact (model.toControlSystem_canStep_iff source result).mpr ⟨edge, hstep⟩
-      · exact htarget
-  · rintro ⟨result, hstep, htarget⟩
-    obtain ⟨edge, hedge⟩ := (model.toControlSystem_canStep_iff source result).mp hstep
-    exact hpre.mpr ⟨edge, ⟨(), result⟩, hedge, htarget⟩
+      change target.Holds result at htarget
+      exact ⟨edge, result, hstep, htarget⟩
+  · rintro ⟨edge, result, hstep, htarget⟩
+    have htarget' : target.toRegion.Holds ⟨(), result⟩ := by
+      change target.Holds result
+      exact htarget
+    have h' : (Region.pre model target.toRegion).Holds ⟨(), source⟩ :=
+      hpre.mpr ⟨edge, ⟨(), result⟩, hstep, htarget'⟩
+    change (pre model target).Holds source
+    exact h'
 
 end WholeRegion
 
@@ -102,7 +112,8 @@ structure WholeObservables (Γ : Ctx) where
 
 /-- The effective HMR tuple for one finite whole-state QF_ABV model. -/
 structure ExecutableWholeStateAlgebra (Γ : Ctx) where
-  system : QFAbvSTS Γ
+  system : SymbolicTransitionSystem Unit Γ (SymbolicTransition Unit Γ)
+  canonical : system.edgeSemantics = SymbolicTransition.edgeSemantics
   observables : WholeObservables Γ
 
 end Ayxg.LTS.QfAbv
