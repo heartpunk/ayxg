@@ -1,7 +1,8 @@
 import Ayxg.STS
-import Ayxg.QfAbv.STS
+import Ayxg.QfAbv.Step
 import Ayxg.QfAbv.Subst
 import Ayxg.LTS.QfAbv.SymbolicTransitionSystem
+import Ayxg.LTS.QfAbv.STSBridge
 
 namespace Bridge.Examples
 
@@ -248,11 +249,15 @@ example : (identityLabel.compose identityLabel).denotes env env := by
 def controlView : QFAbvControlView ctx (.bv 8) := ⟨.var .here⟩
 example : controlView.observe env = 3 := rfl
 
-def qfModel : QFAbvSTS ctx := ⟨[QFAbvStep.identity ctx]⟩
-example : qfModel.toSTS.steps = [QFAbvStep.identity ctx] := rfl
-example : qfModel.toLTS.Tr env (QFAbvStep.identity ctx) env := by
-  exact ⟨by simp [qfModel, QFAbvSTS.toSTS],
-    (QFAbvStep.identity_denotes_iff env env).2 rfl⟩
+def qfModel : LTS.QfAbv.SymbolicTransitionSystem Unit ctx
+    (LTS.QfAbv.SymbolicTransition Unit ctx) :=
+  Ayxg.QfAbv.toControlSystem [QFAbvStep.identity ctx]
+def qfEdge : LTS.QfAbv.SymbolicTransition Unit ctx :=
+  QFAbvStep.toControlEdge (QFAbvStep.identity ctx)
+example : qfModel.toLTS.Tr ⟨(), env⟩ qfEdge ⟨(), env⟩ := by
+  exact (Ayxg.QfAbv.toControlSystem_step_iff
+    [QFAbvStep.identity ctx] (QFAbvStep.identity ctx) env env).1
+      ⟨by simp, (QFAbvStep.identity_denotes_iff env env).2 rfl⟩
 
 def sourceConfig : LTS.QfAbv.Config Nat ctx := ⟨0, env⟩
 def targetConfig : LTS.QfAbv.Config Nat ctx := ⟨1, env⟩
