@@ -9,9 +9,11 @@ open _root_.Ayxg.QfAbv
 namespace Region
 
 /-- Disjoin the one-edge predecessor formulas in an existing control site's
-outgoing edge list. This adds no states or edges to the source graph. -/
+outgoing edge list. The model must use those edges' guarded-update semantics.
+This adds no states or edges to the source graph. -/
 def pre {C : Type} [DecidableEq C] {Γ : Ctx}
     (m : SymbolicTransitionSystem C Γ (SymbolicTransition C Γ))
+    (_canonical : m.edgeSemantics = SymbolicTransition.edgeSemantics)
     (target : Region C Γ) : Region C Γ where
   formulaAt := fun c =>
     (m.transAt c).foldr
@@ -49,10 +51,10 @@ theorem holds_pre_iff {C : Type} [DecidableEq C]
     (m : SymbolicTransitionSystem C Γ (SymbolicTransition C Γ))
     (hsem : m.edgeSemantics = SymbolicTransition.edgeSemantics)
     (target : Region C Γ) (source : Config C Γ) :
-    (pre m target).Holds source ↔
+    (pre m hsem target).Holds source ↔
       ∃ edge successor,
         m.toLTS.Tr source edge successor ∧ target.Holds successor := by
-  rw [show (pre m target).Holds source ↔
+  rw [show (pre m hsem target).Holds source ↔
       ∃ edge ∈ m.transAt source.control, (preEdge edge target).Holds source from
       eval_foldr_pre_iff (m.transAt source.control) target source]
   simp only [holds_preEdge_exists_iff]

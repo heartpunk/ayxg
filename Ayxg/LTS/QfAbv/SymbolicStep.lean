@@ -38,6 +38,23 @@ def ofSymbolicSuccessors {Γ : Ctx} {E : Type}
   }
   transAt := fun _ => successors
 
+/-- Packaging symbolic successors preserves exactly their membership and
+complete guarded state-transformer semantics. -/
+theorem ofSymbolicSuccessors_transition_iff {Γ : Ctx} {E : Type}
+    (successors : List (SymbolicSuccessor E Γ Γ))
+    (source target : Config Unit Γ) (successor : SymbolicSuccessor E Γ Γ) :
+    (ofSymbolicSuccessors successors).toLTS.Tr source successor target ↔
+      successor ∈ successors ∧ successor.step.denotes source.env target.env := by
+  cases source with
+  | mk sourceControl sourceEnv =>
+    cases sourceControl
+    cases target with
+    | mk targetControl targetEnv =>
+      cases targetControl
+      simp only [ofSymbolicSuccessors, SymbolicTransitionSystem.toLTS,
+        SymbolicEdgeSemantics.denotes, SymbolicEdgeSemantics.nextConfig,
+        QFAbvStep.denotes, true_and, Config.mk.injEq]
+
 /-- Exact connection between each returned labeled successor and the
 source-indexed LTS transition relation, with the label preserved. -/
 theorem symbolicStep_denotes_iff {Γinput Γ : Ctx} {E : Type}
@@ -93,6 +110,26 @@ theorem symbolicStep_denotes_iff {Γinput Γ : Ctx} {E : Type}
     }
     exact ⟨successor, ⟨edge, member, rfl⟩, rfl, hcomposed⟩
 
+/-- Packaging a symbolic step as an STS preserves its exact source transition,
+including the original edge label and the input guard/update semantics. -/
+theorem ofSymbolicSuccessors_symbolicStep_transition_iff {Γ : Ctx} {E : Type}
+    (model : SymbolicTransitionSystem Unit Γ E) (input : QFAbvStep Γ Γ)
+    (source : Env Γ) (edge : E) (target : Env Γ) :
+    (∃ successor,
+      (ofSymbolicSuccessors (model.symbolicStep input)).toLTS.Tr
+        ⟨(), source⟩ successor ⟨(), target⟩ ∧ successor.edge = edge) ↔
+      Eval.evalBool source input.guard = true ∧
+        model.toLTS.Tr ⟨(), input.update.eval source⟩ edge ⟨(), target⟩ := by
+  rw [← symbolicStep_denotes_iff model input source edge target]
+  constructor
+  · rintro ⟨successor, transition, edgeEq⟩
+    obtain ⟨member, denotes⟩ :=
+      (ofSymbolicSuccessors_transition_iff _ _ _ _).1 transition
+    exact ⟨successor, member, edgeEq, denotes⟩
+  · rintro ⟨successor, member, edgeEq, denotes⟩
+    exact ⟨successor,
+      (ofSymbolicSuccessors_transition_iff _ _ _ _).2 ⟨member, denotes⟩, edgeEq⟩
+
 /-- Every admitted returned successor denotes its own exact source edge. -/
 theorem symbolicStep_sound {Γinput Γ : Ctx} {E : Type}
     (model : SymbolicTransitionSystem Unit Γ E)
@@ -127,6 +164,6 @@ theorem symbolicStep_length {Γinput Γ : Ctx} {E : Type}
     (model : SymbolicTransitionSystem Unit Γ E)
     (input : QFAbvStep Γinput Γ) :
     (model.symbolicStep input).length = (model.transAt ()).length := by
-  simp [symbolicStep, ShareCommon.shareCommon']
+  simp only [symbolicStep, ShareCommon.shareCommon', List.length_map]
 
 end Ayxg.LTS.QfAbv.SymbolicTransitionSystem

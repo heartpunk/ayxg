@@ -36,13 +36,15 @@ def diff {Γ : Ctx} (left right : WholeRegion Γ) : WholeRegion Γ :=
   ⟨.boolAnd left.formula (.boolNot right.formula)⟩
 
 /-- Finite predecessor construction over the model's actual guarded-rule list.
+The model must use the canonical semantics of those guarded rules.
 `Region.pre` folds that list into a Boolean formula; the sole control site is
 selected here, so the returned value is expression syntax rather than a
 function-valued region. -/
 def pre {Γ : Ctx}
     (model : SymbolicTransitionSystem Unit Γ (SymbolicTransition Unit Γ))
+    (canonical : model.edgeSemantics = SymbolicTransition.edgeSemantics)
     (target : WholeRegion Γ) : WholeRegion Γ :=
-  ⟨(Region.pre model target.toRegion).formulaAt ()⟩
+  ⟨(Region.pre model canonical target.toRegion).formulaAt ()⟩
 
 theorem member_eq_true_iff {Γ : Ctx} (region : WholeRegion Γ)
     (env : Env Γ) : region.member env = true ↔ region.Holds env := by
@@ -74,15 +76,15 @@ theorem holds_pre_iff {Γ : Ctx}
     (model : SymbolicTransitionSystem Unit Γ (SymbolicTransition Unit Γ))
     (canonical : model.edgeSemantics = SymbolicTransition.edgeSemantics)
     (target : WholeRegion Γ) (source : Env Γ) :
-    (pre model target).Holds source ↔
+    (pre model canonical target).Holds source ↔
       ∃ (edge : SymbolicTransition Unit Γ) (result : Env Γ),
         model.toLTS.Tr ⟨(), source⟩ edge ⟨(), result⟩ ∧
           target.Holds result := by
   have hpre := Region.holds_pre_iff model canonical target.toRegion ⟨(), source⟩
   constructor
   · intro h
-    have h' : (Region.pre model target.toRegion).Holds ⟨(), source⟩ := by
-      change (pre model target).Holds source
+    have h' : (Region.pre model canonical target.toRegion).Holds ⟨(), source⟩ := by
+      change (pre model canonical target).Holds source
       exact h
     obtain ⟨edge, successor, hstep, htarget⟩ := hpre.mp h'
     cases successor with
@@ -94,9 +96,9 @@ theorem holds_pre_iff {Γ : Ctx}
     have htarget' : target.toRegion.Holds ⟨(), result⟩ := by
       change target.Holds result
       exact htarget
-    have h' : (Region.pre model target.toRegion).Holds ⟨(), source⟩ :=
+    have h' : (Region.pre model canonical target.toRegion).Holds ⟨(), source⟩ :=
       hpre.mpr ⟨edge, ⟨(), result⟩, hstep, htarget'⟩
-    change (pre model target).Holds source
+    change (pre model canonical target).Holds source
     exact h'
 
 end WholeRegion
