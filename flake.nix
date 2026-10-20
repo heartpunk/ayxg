@@ -22,11 +22,13 @@
           name = "floatlib-ayxg-scoped";
           src = floatlib-src;
           patches = [
-            # TODO(upstream-floatlib-smt-rna): Propose the five-mode SMT/RNA
+            # TODO(upstream-floatlib-smt-rna): AYXG #3
+            # Propose the five-mode SMT/RNA
             # extension upstream as a separate feature; replace this patch
             # when a compatible upstream implementation covers its semantics.
             ./nix/floatlib-smt-rna.patch
-            # TODO(upstream-floatlib-axioms): Port the axiom-footprint cleanup
+            # TODO(upstream-floatlib-axioms): AYXG #2
+            # Port the axiom-footprint cleanup
             # to upstream FloatLib and submit it; retire this patch once a
             # compatible pin includes it and the rfl/axiom regressions pass.
             # If this requires a Lean upgrade, coordinate Mathlib, IFRL, and
