@@ -1,6 +1,6 @@
 import Bridge.Examples
 import LeanPy
-import Ayxg.QfAbv.STS
+import Ayxg.QfAbv.Step
 import Ayxg.QfAbv.JsonCodec
 open LeanPy Lean Ayxg.QfAbv
 namespace Bridge

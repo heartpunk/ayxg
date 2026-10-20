@@ -136,24 +136,6 @@ theorem associativityDenotationLaw_holds : associativityDenotationLaw := by
 
 end QFAbvStep
 
-/-- Legacy full-state STS. Deprecated for new dependencies; retained for
-existing proofs and compatibility. New models should use
-`Ayxg.LTS.QfAbv.SymbolicTransitionSystem`, with `C = Unit` when control is
-already represented in `Γ`. See the repository's root `AGENTS.md`. -/
-@[deprecated "Use Ayxg.LTS.QfAbv.SymbolicTransitionSystem instead" (since := "2026-10-11")]
-structure QFAbvSTS (Γ : Ctx) where
-  steps : List (QFAbvStep Γ Γ)
-
-namespace QFAbvSTS
-
-def toSTS {Γ : Ctx} (model : QFAbvSTS Γ) : Ayxg.STS (Env Γ) (QFAbvStep Γ Γ) where
-  steps := model.steps
-
-def toLTS {Γ : Ctx} (model : QFAbvSTS Γ) : Ayxg.LTS (Env Γ) (QFAbvStep Γ Γ) :=
-  model.toSTS.toLTS (fun source step target => step.denotes source target)
-
-end QFAbvSTS
-
 abbrev QFAbvAdapter (Γin Γout : Ctx) :=
   Ayxg.Adapter (Env Γin) (Env Γout) (QFAbvStep Γin Γout)
 

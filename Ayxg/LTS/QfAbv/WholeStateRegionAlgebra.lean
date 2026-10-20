@@ -1,19 +1,18 @@
-import Ayxg.LTS.QfAbv.STSBridge
 import Ayxg.LTS.QfAbv.RegionFinite
 
-namespace Ayxg.QfAbv.QFAbvSTS
+namespace Ayxg.LTS.QfAbv
+
+open _root_.Ayxg.QfAbv
 
 variable [FPInterpretation]
 
-/-- Equip a whole-state QF_ABV system with the existing region algebra.
+/-- Equip a source-indexed whole-state system with the existing region
+algebra. `Unit` is its structural control; all program control is in `Γ`. -/
+def wholeStateRegionAlgebra {Γ : Ctx}
+    (system : SymbolicTransitionSystem Unit Γ (SymbolicTransition Unit Γ))
+    (canonical : system.edgeSemantics = SymbolicTransition.edgeSemantics)
+    (observables : Region.Observables Unit Γ) : RegionAlgebra Unit Γ :=
+  RegionAlgebra.ofFiniteControls system canonical [()] (by intro c; cases c; simp)
+    observables
 
-The caller chooses the finite observables of the modeled program. `Unit` adds
-no control component beyond the complete environment already used by this STS.
-The bridge preserves its one-step transition relation exactly. -/
-def toRegionAlgebra {Γ : Ctx} (model : QFAbvSTS Γ)
-    (observables : _root_.Ayxg.LTS.QfAbv.Region.Observables Unit Γ) :
-    _root_.Ayxg.LTS.QfAbv.RegionAlgebra Unit Γ :=
-  _root_.Ayxg.LTS.QfAbv.RegionAlgebra.ofFiniteControls
-    model.toControlSystem rfl [()] (by intro c; cases c; simp) observables
-
-end Ayxg.QfAbv.QFAbvSTS
+end Ayxg.LTS.QfAbv

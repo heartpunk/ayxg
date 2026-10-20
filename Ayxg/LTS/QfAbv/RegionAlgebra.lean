@@ -33,7 +33,7 @@ namespace RegionAlgebra
 def pre {C : Type} [DecidableEq C]
     [_root_.Ayxg.QfAbv.FPInterpretation] {Γ : Ctx}
     (algebra : RegionAlgebra C Γ) (target : Region C Γ) : Region C Γ :=
-  Region.pre algebra.system target
+  Region.pre algebra.system algebra.canonical target
 
 /-- Decide region emptiness using the supplied complete finite state factors. -/
 def empty {C : Type} [DecidableEq C]

@@ -1,0 +1,380 @@
+Tue Oct 20 12:54:37 AM UTC 2026
+c8f532d68a3df157d25b285376e58476661e4c5b
+warning: Git tree '/tmp/ayxg-review-r4-20261019/repo' is dirty
+building '/nix/store/8d9y83n4cq42b1dlcdbx42i64lh2qfmr-floatlib-ayxg-scoped.drv'...
+building '/nix/store/89sl07hx85lgzji8n0lp56h15lz99vnl-nix-shell-env.drv'...
+Lean (version 4.34.0, x86_64-unknown-linux-gnu, commit 293d5d0c0c3f3dded4688b3ccd6a33939ac5102b, Release)
+⚠ [802/805] Replayed FloatLib.Floats.Formats.BinaryInterchange.Model.Carrier
+warning: FloatLib/Floats/Formats/BinaryInterchange/Model/Carrier.lean:442:10: This simp argument is unused:
+  BitVec.toNat_and
+
+Hint: Omit it from the simp argument list.
+  [apply] simp [BitVec.toNat_xor, Nat.testBit_and, Nat.testBit_xor, FloatFormat.fracMaskNat, FloatFormat.signMask_toNat,
+    Nat.testBit_two_pow_of_ne hne, hi]
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+warning: FloatLib/Floats/Formats/BinaryInterchange/Model/Carrier.lean:445:10: This simp argument is unused:
+  BitVec.toNat_and
+
+Hint: Omit it from the simp argument list.
+  [apply] simp [BitVec.toNat_xor, Nat.testBit_and, FloatFormat.fracMaskNat, hi]
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+warning: FloatLib/Floats/Formats/BinaryInterchange/Model/Carrier.lean:458:10: This simp argument is unused:
+  BitVec.toNat_and
+
+Hint: Omit it from the simp argument list.
+  [apply] simp [BitVec.toNat_ushiftRight, BitVec.toNat_xor, Nat.testBit_and, Nat.testBit_xor, Nat.testBit_shiftRight,
+    FloatFormat.expAllOnesNat, FloatFormat.signMask_toNat, Nat.testBit_two_pow_of_ne hne, hi]
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+warning: FloatLib/Floats/Formats/BinaryInterchange/Model/Carrier.lean:458:28: This simp argument is unused:
+  BitVec.toNat_ushiftRight
+
+Hint: Omit it from the simp argument list.
+  [apply] simp [BitVec.toNat_and, BitVec.toNat_xor, Nat.testBit_and, Nat.testBit_xor, Nat.testBit_shiftRight,
+    FloatFormat.expAllOnesNat, FloatFormat.signMask_toNat, Nat.testBit_two_pow_of_ne hne, hi]
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+warning: FloatLib/Floats/Formats/BinaryInterchange/Model/Carrier.lean:462:10: This simp argument is unused:
+  BitVec.toNat_and
+
+Hint: Omit it from the simp argument list.
+  [apply] simp [BitVec.toNat_ushiftRight, BitVec.toNat_xor, Nat.testBit_and, Nat.testBit_shiftRight,
+    FloatFormat.expAllOnesNat, hi]
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+warning: FloatLib/Floats/Formats/BinaryInterchange/Model/Carrier.lean:462:28: This simp argument is unused:
+  BitVec.toNat_ushiftRight
+
+Hint: Omit it from the simp argument list.
+  [apply] simp [BitVec.toNat_and, BitVec.toNat_xor, Nat.testBit_and, Nat.testBit_shiftRight, FloatFormat.expAllOnesNat,
+    hi]
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+✔ [804/809] Built FloatLib.Floats.Formats.BinaryInterchange.Model.Lean (2.1s)
+⚠ [893/898] Replayed FloatLib.Floats.Formats.BinaryInterchange.Model.Fields.Optimized
+warning: FloatLib/Floats/Formats/BinaryInterchange/Model/Fields/Optimized.lean:157:13: This simp argument is unused:
+  BitVec.toNat_and
+
+Hint: Omit it from the simp argument list.
+  [apply] simp only [BitVec.toNat_ushiftRight, FloatFormat.expAllOnes, FloatFormat.ofWordNat, BitVec.toNat_ofNat]
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+warning: FloatLib/Floats/Formats/BinaryInterchange/Model/Fields/Optimized.lean:157:31: This simp argument is unused:
+  BitVec.toNat_ushiftRight
+
+Hint: Omit it from the simp argument list.
+  [apply] simp only [BitVec.toNat_and, FloatFormat.expAllOnes, FloatFormat.ofWordNat, BitVec.toNat_ofNat]
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+warning: FloatLib/Floats/Formats/BinaryInterchange/Model/Fields/Optimized.lean:171:13: This simp argument is unused:
+  BitVec.toNat_and
+
+Hint: Omit it from the simp argument list.
+  [apply] simp only [FloatFormat.fracMask, FloatFormat.ofWordNat, BitVec.toNat_ofNat]
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+✔ [895/898] Built FloatLib.Floats.Formats.BinaryInterchange.Dyadic.Core (2.3s)
+✔ [896/898] Built FloatLib.Floats.Formats.BinaryInterchange.Dyadic.Rounding (1.3s)
+✔ [897/898] Built FloatLib.Floats.Formats.BinaryInterchange.Dyadic.Rational (1.4s)
+✔ [2065/2071] Built FloatLib.Floats.Formats.BinaryInterchange.RoundDyadicImpl.Runtime (1.2s)
+✔ [2066/2076] Built FloatLib.Floats.Formats.BinaryInterchange.ModelRounding.Runtime (1.7s)
+✔ [2070/2077] Built FloatLib.Floats.Formats.BinaryInterchange.Rounding.NearestEven (3.8s)
+✔ [2073/2083] Built FloatLib.Floats.Formats.BinaryInterchange.ModelRounding.Proof (4.3s)
+✔ [2077/2083] Built FloatLib.Floats.Formats.BinaryInterchange.Dyadic.Decode (1.6s)
+✔ [2078/2083] Built FloatLib.Floats.Formats.BinaryInterchange.Model.Packing.Bounds (1.2s)
+✔ [2079/2087] Built FloatLib.Floats.Formats.BinaryInterchange.Dyadic.Classification (1.0s)
+✔ [2080/2087] Built FloatLib.Floats.Formats.BinaryInterchange.Model.RealSemantics (1.9s)
+✔ [2082/2089] Built FloatLib.Floats.Formats.BinaryInterchange.Model.Packing.Special (2.9s)
+✔ [2084/2089] Built FloatLib.Floats.Formats.BinaryInterchange.RoundDyadicImpl.Proof (2.8s)
+✔ [2085/2089] Built FloatLib.Floats.Formats.BinaryInterchange.Model.ExactValue (1.1s)
+✔ [2086/2089] Built FloatLib.Floats.Formats.BinaryInterchange.Operations.Compare.Runtime (1.2s)
+✔ [2087/2089] Built FloatLib.Floats.Formats.BinaryInterchange.Rounding.Directed.Dyadic (1.6s)
+✔ [2088/2089] Built FloatLib.Floats.Formats.BinaryInterchange.Rounding.Policy.Runtime (1.8s)
+✔ [2089/2093] Built FloatLib.Floats.ExecFloat.Backends.Generic.ProductRound.Runtime (1.0s)
+✔ [2090/2093] Built FloatLib.Floats.ExecFloat.Backends.Generic.QuotientRound.Runtime (1.6s)
+✔ [2091/2093] Built FloatLib.Floats.ExecFloat.Backends.Generic.ScaleAdd.Runtime (1.4s)
+✔ [2092/2099] Built FloatLib.Floats.ExecFloat.Backends.Generic.Kernel.Runtime (4.8s)
+✔ [2096/2102] Built FloatLib.Floats.ExecFloat.Backends.Word.Narrow.Base.Runtime (1.1s)
+✔ [2098/2102] Built FloatLib.Floats.ExecFloat.Backends.Word.Narrow.Rounding.Runtime (996ms)
+✔ [2101/2108] Built FloatLib.Floats.ExecFloat.Backends.Word.Narrow.Addition.Runtime (1.1s)
+✔ [2103/2108] Built FloatLib.Floats.ExecFloat.Backends.Word.Full.Core.Runtime (1.6s)
+✔ [2105/2108] Built FloatLib.Floats.ExecFloat.Backends.Word.Full.Subtraction.Runtime (1.2s)
+✔ [2106/2110] Built FloatLib.Floats.ExecFloat.Backends.FixedLimb.Pair.Subtraction.Runtime (1.3s)
+✔ [2107/2114] Built FloatLib.Floats.ExecFloat.Backends.Word.Full.Addition.Runtime (1.5s)
+✔ [2113/2119] Built FloatLib.Floats.ExecFloat.Backends.FixedLimb.Pair.Addition.Runtime (1.3s)
+✔ [2114/2119] Built FloatLib.Floats.Formats.BinaryInterchange.Spec.Division (1.2s)
+✔ [2115/2119] Built FloatLib.Floats.ExecFloat.Backends.Generic.Sqrt.Runtime (2.2s)
+✔ [2116/2121] Built FloatLib.Floats.ExecFloat.Backends.Word.Small.Finite.Runtime (1.0s)
+✔ [2118/2123] Built FloatLib.Floats.ExecFloat.Backends.Word.Small.Add.Runtime (1.5s)
+✔ [2119/2123] Built FloatLib.Floats.ExecFloat.Backends.Word.Narrow.Division.Runtime (1.1s)
+✔ [2120/2125] Built FloatLib.Floats.ExecFloat.Backends.Dispatch.Add.Runtime (4.0s)
+✔ [2122/2127] Built FloatLib.Floats.ExecFloat.Backends.Word.Full.Division.Runtime (1.1s)
+✔ [2126/2130] Built FloatLib.Floats.ExecFloat.Backends.Dispatch.Div.Runtime (1.5s)
+✔ [2127/2130] Built FloatLib.Floats.ExecFloat.Backends.Word.Narrow.Fma.Runtime (1.2s)
+✔ [2128/2133] Built FloatLib.Floats.ExecFloat.Backends.Word.Full.Fma.Runtime (1.5s)
+✔ [2129/2134] Built FloatLib.Floats.ExecFloat.Backends.Dispatch.FmaWord.Runtime (3.1s)
+✔ [2131/2135] Built FloatLib.Floats.ExecFloat.Backends.FixedLimb.Pair.Fma.Runtime (1.9s)
+✔ [2132/2135] Built FloatLib.Floats.ExecFloat.Backends.Word.Narrow.Multiplication.Runtime (1.0s)
+✔ [2133/2137] Built FloatLib.Floats.ExecFloat.Backends.Dispatch.Fma.Runtime (1.0s)
+✔ [2136/2140] Built FloatLib.Floats.ExecFloat.Backends.Dispatch.Mul.Runtime (1.3s)
+✔ [2137/2140] Built FloatLib.Floats.ExecFloat.Backends.Word.Narrow.Sqrt.Runtime (1.0s)
+✔ [2138/2141] Built FloatLib.Floats.ExecFloat.Backends.Word.Full.Sqrt.Runtime (1.0s)
+✔ [2139/2150] Built FloatLib.Floats.ExecFloat.Backends.Dispatch.SqrtWord.Runtime (1.8s)
+✔ [2146/2182] Built FloatLib.Floats.ExecFloat.Backends.Dispatch.Sqrt.Runtime (992ms)
+✔ [2147/2182] Built FloatLib.Floats.Formats.BinaryInterchange.Arithmetic.Runtime (967ms)
+✔ [2148/2182] Built FloatLib.Floats.Formats.BinaryInterchange.Conversion.Cast.Widening (1.0s)
+✔ [2150/2182] Built FloatLib.Floats.Formats.BinaryInterchange.Rounding.Directed.Runtime (2.8s)
+✔ [2151/2182] Built FloatLib.Floats.Formats.BinaryInterchange.Status.Runtime (2.3s)
+✔ [2152/2182] Built FloatLib.Floats.Formats.BinaryInterchange.Conversion.Cast.Runtime (6.3s)
+✔ [2153/2182] Built FloatLib.Floats.Formats.BinaryInterchange.Operations.Runtime (2.1s)
+✔ [2154/2182] Built FloatLib.Floats.Formats.BinaryInterchange.SMT.Rounding (5.6s)
+✔ [2155/2182] Built FloatLib.Floats.Formats.BinaryInterchange.SMT.Proof (1.6s)
+✔ [2156/2182] Built Ayxg.QfAbv.FpEval (2.2s)
+✔ [2157/2182] Built Ayxg.QfAbv.ExecutableFP (1.8s)
+✔ [2158/2182] Built Ayxg.QfAbv.Eval (2.3s)
+✔ [2159/2182] Built Ayxg.QfAbv.ByteMemory (2.0s)
+✔ [2160/2182] Built Ayxg.LTS.QfAbv.FiniteEnv (1.0s)
+⚠ [2161/2182] Built Ayxg.QfAbv.Subst (32s)
+warning: Ayxg/QfAbv/Subst.lean:143:102: Unused tactic linter: `rfl` does nothing
+
+Note: This linter can be disabled with `set_option linter.unusedTactic false`
+warning: Ayxg/QfAbv/Subst.lean:144:100: Unused tactic linter: `rfl` does nothing
+
+Note: This linter can be disabled with `set_option linter.unusedTactic false`
+warning: Ayxg/QfAbv/Subst.lean:145:102: Unused tactic linter: `rfl` does nothing
+
+Note: This linter can be disabled with `set_option linter.unusedTactic false`
+warning: Ayxg/QfAbv/Subst.lean:149:141: Unused tactic linter: `rfl` does nothing
+
+Note: This linter can be disabled with `set_option linter.unusedTactic false`
+warning: Ayxg/QfAbv/Subst.lean:150:152: Unused tactic linter: `rfl` does nothing
+
+Note: This linter can be disabled with `set_option linter.unusedTactic false`
+warning: Ayxg/QfAbv/Subst.lean:152:105: Unused tactic linter: `rfl` does nothing
+
+Note: This linter can be disabled with `set_option linter.unusedTactic false`
+warning: Ayxg/QfAbv/Subst.lean:153:154: Unused tactic linter: `rfl` does nothing
+
+Note: This linter can be disabled with `set_option linter.unusedTactic false`
+warning: Ayxg/QfAbv/Subst.lean:154:156: Unused tactic linter: `rfl` does nothing
+
+Note: This linter can be disabled with `set_option linter.unusedTactic false`
+warning: Ayxg/QfAbv/Subst.lean:155:147: Unused tactic linter: `rfl` does nothing
+
+Note: This linter can be disabled with `set_option linter.unusedTactic false`
+warning: Ayxg/QfAbv/Subst.lean:169:90: Unused tactic linter: `rfl` does nothing
+
+Note: This linter can be disabled with `set_option linter.unusedTactic false`
+warning: Ayxg/QfAbv/Subst.lean:173:97: Unused tactic linter: `rfl` does nothing
+
+Note: This linter can be disabled with `set_option linter.unusedTactic false`
+warning: Ayxg/QfAbv/Subst.lean:174:101: Unused tactic linter: `rfl` does nothing
+
+Note: This linter can be disabled with `set_option linter.unusedTactic false`
+warning: Ayxg/QfAbv/Subst.lean:175:101: Unused tactic linter: `rfl` does nothing
+
+Note: This linter can be disabled with `set_option linter.unusedTactic false`
+warning: Ayxg/QfAbv/Subst.lean:143:102: this tactic is never executed
+
+Note: This linter can be disabled with `set_option linter.unreachableTactic false`
+warning: Ayxg/QfAbv/Subst.lean:144:100: this tactic is never executed
+
+Note: This linter can be disabled with `set_option linter.unreachableTactic false`
+warning: Ayxg/QfAbv/Subst.lean:145:102: this tactic is never executed
+
+Note: This linter can be disabled with `set_option linter.unreachableTactic false`
+warning: Ayxg/QfAbv/Subst.lean:149:141: this tactic is never executed
+
+Note: This linter can be disabled with `set_option linter.unreachableTactic false`
+warning: Ayxg/QfAbv/Subst.lean:150:152: this tactic is never executed
+
+Note: This linter can be disabled with `set_option linter.unreachableTactic false`
+warning: Ayxg/QfAbv/Subst.lean:152:105: this tactic is never executed
+
+Note: This linter can be disabled with `set_option linter.unreachableTactic false`
+warning: Ayxg/QfAbv/Subst.lean:153:154: this tactic is never executed
+
+Note: This linter can be disabled with `set_option linter.unreachableTactic false`
+warning: Ayxg/QfAbv/Subst.lean:154:156: this tactic is never executed
+
+Note: This linter can be disabled with `set_option linter.unreachableTactic false`
+warning: Ayxg/QfAbv/Subst.lean:155:147: this tactic is never executed
+
+Note: This linter can be disabled with `set_option linter.unreachableTactic false`
+warning: Ayxg/QfAbv/Subst.lean:169:90: this tactic is never executed
+
+Note: This linter can be disabled with `set_option linter.unreachableTactic false`
+warning: Ayxg/QfAbv/Subst.lean:173:97: this tactic is never executed
+
+Note: This linter can be disabled with `set_option linter.unreachableTactic false`
+warning: Ayxg/QfAbv/Subst.lean:174:101: this tactic is never executed
+
+Note: This linter can be disabled with `set_option linter.unreachableTactic false`
+warning: Ayxg/QfAbv/Subst.lean:175:101: this tactic is never executed
+
+Note: This linter can be disabled with `set_option linter.unreachableTactic false`
+warning: Ayxg/QfAbv/Subst.lean:176:95: Used `tac1 <;> tac2` where `(tac1; tac2)` would suffice
+
+Note: This linter can be disabled with `set_option linter.unnecessarySeqFocus false`
+warning: Ayxg/QfAbv/Subst.lean:351:87: Unused tactic linter: `rfl` does nothing
+
+Note: This linter can be disabled with `set_option linter.unusedTactic false`
+warning: Ayxg/QfAbv/Subst.lean:352:85: Unused tactic linter: `rfl` does nothing
+
+Note: This linter can be disabled with `set_option linter.unusedTactic false`
+warning: Ayxg/QfAbv/Subst.lean:353:87: Unused tactic linter: `rfl` does nothing
+
+Note: This linter can be disabled with `set_option linter.unusedTactic false`
+warning: Ayxg/QfAbv/Subst.lean:357:112: Unused tactic linter: `rfl` does nothing
+
+Note: This linter can be disabled with `set_option linter.unusedTactic false`
+warning: Ayxg/QfAbv/Subst.lean:358:123: Unused tactic linter: `rfl` does nothing
+
+Note: This linter can be disabled with `set_option linter.unusedTactic false`
+warning: Ayxg/QfAbv/Subst.lean:360:90: Unused tactic linter: `rfl` does nothing
+
+Note: This linter can be disabled with `set_option linter.unusedTactic false`
+warning: Ayxg/QfAbv/Subst.lean:361:125: Unused tactic linter: `rfl` does nothing
+
+Note: This linter can be disabled with `set_option linter.unusedTactic false`
+warning: Ayxg/QfAbv/Subst.lean:362:127: Unused tactic linter: `rfl` does nothing
+
+Note: This linter can be disabled with `set_option linter.unusedTactic false`
+warning: Ayxg/QfAbv/Subst.lean:363:118: Unused tactic linter: `rfl` does nothing
+
+Note: This linter can be disabled with `set_option linter.unusedTactic false`
+warning: Ayxg/QfAbv/Subst.lean:375:37: Unused tactic linter: `rfl` does nothing
+
+Note: This linter can be disabled with `set_option linter.unusedTactic false`
+warning: Ayxg/QfAbv/Subst.lean:378:82: Unused tactic linter: `rfl` does nothing
+
+Note: This linter can be disabled with `set_option linter.unusedTactic false`
+warning: Ayxg/QfAbv/Subst.lean:379:86: Unused tactic linter: `rfl` does nothing
+
+Note: This linter can be disabled with `set_option linter.unusedTactic false`
+warning: Ayxg/QfAbv/Subst.lean:380:86: Unused tactic linter: `rfl` does nothing
+
+Note: This linter can be disabled with `set_option linter.unusedTactic false`
+warning: Ayxg/QfAbv/Subst.lean:351:87: this tactic is never executed
+
+Note: This linter can be disabled with `set_option linter.unreachableTactic false`
+warning: Ayxg/QfAbv/Subst.lean:352:85: this tactic is never executed
+
+Note: This linter can be disabled with `set_option linter.unreachableTactic false`
+warning: Ayxg/QfAbv/Subst.lean:353:87: this tactic is never executed
+
+Note: This linter can be disabled with `set_option linter.unreachableTactic false`
+warning: Ayxg/QfAbv/Subst.lean:357:112: this tactic is never executed
+
+Note: This linter can be disabled with `set_option linter.unreachableTactic false`
+warning: Ayxg/QfAbv/Subst.lean:358:123: this tactic is never executed
+
+Note: This linter can be disabled with `set_option linter.unreachableTactic false`
+warning: Ayxg/QfAbv/Subst.lean:360:90: this tactic is never executed
+
+Note: This linter can be disabled with `set_option linter.unreachableTactic false`
+warning: Ayxg/QfAbv/Subst.lean:361:125: this tactic is never executed
+
+Note: This linter can be disabled with `set_option linter.unreachableTactic false`
+warning: Ayxg/QfAbv/Subst.lean:362:127: this tactic is never executed
+
+Note: This linter can be disabled with `set_option linter.unreachableTactic false`
+warning: Ayxg/QfAbv/Subst.lean:363:118: this tactic is never executed
+
+Note: This linter can be disabled with `set_option linter.unreachableTactic false`
+warning: Ayxg/QfAbv/Subst.lean:375:37: this tactic is never executed
+
+Note: This linter can be disabled with `set_option linter.unreachableTactic false`
+warning: Ayxg/QfAbv/Subst.lean:378:82: this tactic is never executed
+
+Note: This linter can be disabled with `set_option linter.unreachableTactic false`
+warning: Ayxg/QfAbv/Subst.lean:379:86: this tactic is never executed
+
+Note: This linter can be disabled with `set_option linter.unreachableTactic false`
+warning: Ayxg/QfAbv/Subst.lean:380:86: this tactic is never executed
+
+Note: This linter can be disabled with `set_option linter.unreachableTactic false`
+warning: Ayxg/QfAbv/Subst.lean:381:80: Used `tac1 <;> tac2` where `(tac1; tac2)` would suffice
+
+Note: This linter can be disabled with `set_option linter.unnecessarySeqFocus false`
+⚠ [2162/2182] Built Ayxg.QfAbv.Update (2.4s)
+warning: Ayxg/QfAbv/Update.lean:51:8: automatically included section variable(s) unused in theorem `_private.Ayxg.QfAbv.Update.0.Ayxg.QfAbv.StateUpdate.env_eq_of_lookup_eq`:
+  [FPInterpretation]
+consider restructuring your `variable` declarations so that the variables are not in scope or explicitly omit them:
+  omit [FPInterpretation] in theorem ...
+
+Note: This linter can be disabled with `set_option linter.unusedSectionVars false`
+✔ [2163/2182] Built Ayxg.QfAbv.LetChain (2.1s)
+✔ [2164/2182] Built Ayxg.QfAbv.SymbolicLabel (2.2s)
+✔ [2165/2182] Built Ayxg.QfAbv.Step (2.1s)
+⚠ [2166/2182] Built Ayxg.LTS.QfAbv.SymbolicTransition (1.9s)
+warning: Ayxg/LTS/QfAbv/SymbolicTransition.lean:85:8: automatically included section variable(s) unused in theorem `Ayxg.LTS.QfAbv.SymbolicTransition.edgeSemantics_source`:
+  [FPInterpretation]
+consider restructuring your `variable` declarations so that the variables are not in scope or explicitly omit them:
+  omit [FPInterpretation] in theorem ...
+
+Note: This linter can be disabled with `set_option linter.unusedSectionVars false`
+warning: Ayxg/LTS/QfAbv/SymbolicTransition.lean:89:8: automatically included section variable(s) unused in theorem `Ayxg.LTS.QfAbv.SymbolicTransition.edgeSemantics_symbolicLabel`:
+  [FPInterpretation]
+consider restructuring your `variable` declarations so that the variables are not in scope or explicitly omit them:
+  omit [FPInterpretation] in theorem ...
+
+Note: This linter can be disabled with `set_option linter.unusedSectionVars false`
+warning: Ayxg/LTS/QfAbv/SymbolicTransition.lean:93:8: automatically included section variable(s) unused in theorem `Ayxg.LTS.QfAbv.SymbolicTransition.edgeSemantics_nextControl`:
+  [FPInterpretation]
+consider restructuring your `variable` declarations so that the variables are not in scope or explicitly omit them:
+  omit [FPInterpretation] in theorem ...
+
+Note: This linter can be disabled with `set_option linter.unusedSectionVars false`
+✔ [2167/2182] Built Ayxg.QfAbv.JsonCodec (4.4s)
+⚠ [2168/2182] Built Ayxg.LTS.QfAbv.SymbolicTransitionSystem (2.0s)
+warning: Ayxg/LTS/QfAbv/SymbolicTransitionSystem.lean:134:0: automatically included section variable(s) unused in theorem `Ayxg.LTS.QfAbv.SymbolicTransitionSystem.transAt_mem_src`:
+  [FPInterpretation]
+consider restructuring your `variable` declarations so that the variables are not in scope or explicitly omit them:
+  omit [FPInterpretation] in theorem ...
+
+Note: This linter can be disabled with `set_option linter.unusedSectionVars false`
+⚠ [2169/2182] Built Ayxg.LTS.QfAbv.STSBridge (1.9s)
+warning: Ayxg/LTS/QfAbv/STSBridge.lean:26:8: automatically included section variable(s) unused in theorem `_private.Ayxg.LTS.QfAbv.STSBridge.0.Ayxg.QfAbv.toControlEdge_injective`:
+  [FPInterpretation]
+consider restructuring your `variable` declarations so that the variables are not in scope or explicitly omit them:
+  omit [FPInterpretation] in theorem ...
+
+Note: This linter can be disabled with `set_option linter.unusedSectionVars false`
+✔ [2170/2182] Built Ayxg.LTS.QfAbv.Region (1.9s)
+✔ [2171/2182] Built Ayxg.LTS.QfAbv.SymbolicStep (1.0s)
+✔ [2172/2182] Built Ayxg.LTS.QfAbv.RegionObservables (1.9s)
+✔ [2173/2182] Built Ayxg.LTS.QfAbv.RegionMember (1.8s)
+✔ [2174/2182] Built Ayxg.LTS.QfAbv.RegionPre (1.0s)
+✔ [2175/2182] Built Ayxg.LTS.QfAbv.RegionEmpty (1.9s)
+✔ [2176/2182] Built Ayxg.LTS.QfAbv.RegionAlgebra (1.9s)
+✔ [2177/2182] Built Ayxg.LTS.QfAbv.RegionFinite (1.7s)
+✔ [2178/2182] Built Ayxg.LTS.QfAbv.WholeStateRegionAlgebra (1.8s)
+✔ [2179/2182] Built Ayxg.LTS.QfAbv.WholeStateRegionStep (1.9s)
+✔ [2180/2182] Built Ayxg.LTS.QfAbv.ExecutableWholeRegion (2.1s)
+✔ [2181/2182] Built Ayxg (2.2s)
+Build completed successfully (2182 jobs).
+shared successor object: PASS
+tests/lean_bridge/Bridge/Examples.lean:37:0: warning: Definition `renameAgreement` is a proposition; use `theorem` instead of `def`
+
+Note: This linter can be disabled with `set_option linter.defProp false`
+tests/lean_bridge/Bridge/Examples.lean:84:0: warning: Definition `swapAgreement` is a proposition; use `theorem` instead of `def`
+
+Note: This linter can be disabled with `set_option linter.defProp false`
+'Ayxg.LTS.QfAbv.SymbolicTransitionSystem.ofSymbolicSuccessors_transition_iff' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'Ayxg.LTS.QfAbv.SymbolicTransitionSystem.ofSymbolicSuccessors_symbolicStep_transition_iff' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'Ayxg.LTS.QfAbv.SymbolicTransitionSystem.symbolicStep_denotes_iff' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'Ayxg.LTS.QfAbv.SymbolicTransitionSystem.symbolicStep_sound' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Ayxg.LTS.QfAbv.SymbolicTransitionSystem.symbolicStep_complete' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'Ayxg.LTS.QfAbv.SymbolicTransitionSystem.symbolicStep_length' depends on axioms: [propext]
+Tue Oct 20 12:58:17 AM UTC 2026

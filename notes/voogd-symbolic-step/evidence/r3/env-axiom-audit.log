@@ -1,0 +1,38 @@
+warning: Git tree '/tmp/ayxg-review-r3-20261019/repo' is dirty
+'Ayxg.QfAbv.FPValue' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Ayxg.QfAbv.FPFormat.floatFormat' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Ayxg.QfAbv.canonicalNaN' depends on axioms: [propext, Classical.choice, Quot.sound]
+'FloatLib.Floats.Formats.BinaryInterchange.Model' does not depend on any axioms
+'FloatLib.Floats.Formats.BinaryInterchange.FloatFormat' does not depend on any axioms
+'FloatLib.Floats.Formats.BinaryInterchange.FloatFormat.ieee' depends on axioms: [propext, Classical.choice, Quot.sound]
+'FloatLib.Floats.Formats.BinaryInterchange.FloatFormat.ieeeBias_pos' depends on axioms: [propext, Quot.sound]
+'FloatLib.Floats.Formats.BinaryInterchange.FloatFormat.ieeeBias_le_maxFiniteExponent' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'FloatLib.Floats.Formats.BinaryInterchange.Model.ofNatBits' does not depend on any axioms
+'FloatLib.Floats.Formats.BinaryInterchange.Model.isNaN' depends on axioms: [propext, Quot.sound]
+'Nat.pow_le_pow_right' does not depend on any axioms
+'Nat.pow_lt_pow_right' depends on axioms: [propext, Classical.choice, Quot.sound]
+theorem FloatLib.Floats.Formats.BinaryInterchange.FloatFormat.ieeeBias_pos : ∀ (expWidth : ℕ),
+  2 ≤ expWidth → 0 < FloatLib.Floats.Formats.BinaryInterchange.FloatFormat.ieeeBias expWidth :=
+fun expWidth h =>
+  have hindex := Nat.le_sub_of_add_le h;
+  have hpow :=
+    Eq.mp (congrFun' (congrArg LE.le (Nat.pow_one 2)) (2 ^ (expWidth - 1)))
+      (Nat.pow_le_pow_right (of_decide_eq_true (id (Eq.refl true))) hindex);
+  id
+    (Decidable.byContradiction fun a =>
+      FloatLib.Floats.Formats.BinaryInterchange.FloatFormat.ieeeBias_pos._proof_1_1✝ expWidth hpow a)
+theorem FloatLib.Floats.Formats.BinaryInterchange.FloatFormat.ieeeBias_le_maxFiniteExponent : ∀ (expWidth : ℕ),
+  2 ≤ expWidth →
+    FloatLib.Floats.Formats.BinaryInterchange.FloatFormat.ieeeBias expWidth ≤
+      FloatLib.Floats.Formats.BinaryInterchange.FloatFormat.Encoding.ieee.maxFiniteExponent expWidth :=
+fun expWidth h =>
+  have hwidthPos :=
+    Decidable.byContradiction fun a =>
+      FloatLib.Floats.Formats.BinaryInterchange.FloatFormat.ieeeBias_le_maxFiniteExponent._proof_1_1✝ expWidth h a;
+  have hindex := Nat.sub_lt hwidthPos (of_decide_eq_true (id (Eq.refl true)));
+  have hpow := Nat.pow_lt_pow_right (of_decide_eq_true (id (Eq.refl true))) hindex;
+  id
+    (Decidable.byContradiction fun a =>
+      FloatLib.Floats.Formats.BinaryInterchange.FloatFormat.ieeeBias_le_maxFiniteExponent._proof_1_2✝ expWidth hpow a)

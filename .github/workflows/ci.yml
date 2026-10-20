@@ -48,7 +48,9 @@ jobs:
       - name: Build Lean and Bazel targets, then run Bazel tests
         run: |
           nix develop .#ci --no-write-lock-file --command bash -euo pipefail -c '
-            lake build
+            lake exe cache get
+            lake build Ayxg
+            lake env lean tests/lean/FPAxiomRegression.lean
             bazel build //...
             bazel test //... --test_output=errors
           '

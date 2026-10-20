@@ -1,5 +1,5 @@
 import Lean
-import Ayxg.QfAbv.STS
+import Ayxg.QfAbv.Step
 
 namespace Ayxg.QfAbv.JsonCodec
 open Lean

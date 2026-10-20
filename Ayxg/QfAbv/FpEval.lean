@@ -6,7 +6,7 @@ open FloatLib.Floats.Formats.BinaryInterchange
 
 def FPFormat.floatFormat (f : FPFormat) : FloatFormat :=
   FloatFormat.ieee f.exponentBits (f.significandBits - 1)
-    f.exponent_ge_two (by have := f.significand_ge_two; omega)
+    f.exponent_ge_two (Nat.sub_pos_of_lt f.significand_ge_two)
 
 def canonicalNaN (f : FPFormat) : Model f.floatFormat :=
   Model.ofNatBits (((2 ^ f.exponentBits - 1) * 2 ^ (f.significandBits - 1)) + 1)
