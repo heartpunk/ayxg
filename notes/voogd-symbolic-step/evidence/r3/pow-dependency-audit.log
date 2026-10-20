@@ -1,0 +1,16 @@
+warning: Git tree '/tmp/ayxg-review-r3-20261019/repo' is dirty
+'Nat.pow_lt_pow_of_lt' depends on axioms: [propext]
+'Nat.pow_lt_pow_iff_right' depends on axioms: [propext, Classical.choice, Quot.sound]
+protected theorem Nat.pow_lt_pow_iff_right : ∀ {a n m : ℕ}, 1 < a → (a ^ n < a ^ m ↔ n < m) :=
+fun {a n m} h =>
+  {
+    mp :=
+      Decidable.by_contra fun w =>
+        Nat.lt_irrefl (a ^ n)
+          (Nat.lt_of_lt_of_le
+            (Eq.mp (Eq.trans Classical.not_imp._simp_1 (congrArg (And (a ^ n < a ^ m)) Nat.not_lt._simp_1)) w).left
+            (Nat.pow_le_pow_of_le h
+              (Eq.mp (Eq.trans Classical.not_imp._simp_1 (congrArg (And (a ^ n < a ^ m)) Nat.not_lt._simp_1))
+                  w).right)),
+    mpr := fun w => Nat.pow_lt_pow_of_lt h w }
+'ieeeBias_bound_without_choice' depends on axioms: [propext, Quot.sound]
