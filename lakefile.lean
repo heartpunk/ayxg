@@ -12,6 +12,7 @@ require floatlib from (run_io do
     | throw <| IO.userError "Run Lake through nix develop: AYXG_FLOATLIB_SOURCE missing"
   let some key ← IO.getEnv "AYXG_FLOATLIB_SOURCE_KEY"
     | throw <| IO.userError "Run Lake through nix develop: AYXG_FLOATLIB_SOURCE_KEY missing"
+  -- The content key covers both the SMT extension and axiom-footprint patches.
   let writable := __dir__ / ".lake" / ("floatlib-source-" ++ key)
   unless ← writable.pathExists do
     IO.FS.createDirAll writable

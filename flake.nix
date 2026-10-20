@@ -21,7 +21,7 @@
         in let floatlib = pkgs.applyPatches {
           name = "floatlib-ayxg-scoped";
           src = floatlib-src;
-          patches = [ ./nix/floatlib-smt-rna.patch ];
+          patches = [ ./nix/floatlib-smt-rna.patch ./nix/floatlib-axiom-footprint.patch ];
         };
         in let z3Python = import ./nix/z3-python.nix { inherit pkgs; };
           python = pkgs.python312.withPackages (_: [ z3Python ]);
@@ -34,7 +34,7 @@
             shellHook = ''
               export PATH="${python}/bin:$PATH"
               export AYXG_FLOATLIB_SOURCE="${floatlib}"
-              export AYXG_FLOATLIB_SOURCE_KEY="222236f04b51cfbf170bd4894542c9ac97436b15"
+              export AYXG_FLOATLIB_SOURCE_KEY="7553d244c7a4e02ffbbdc21eb66b70b9f37bb5e39e6f36a2dedb7834e1f830af"
             '';
           };
         in {

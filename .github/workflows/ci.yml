@@ -49,6 +49,7 @@ jobs:
         run: |
           nix develop .#ci --no-write-lock-file --command bash -euo pipefail -c '
             lake build
+            lake env lean tests/lean/FPAxiomRegression.lean
             bazel build //...
             bazel test //... --test_output=errors
           '

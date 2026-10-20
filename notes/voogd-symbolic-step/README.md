@@ -8,7 +8,29 @@ The exact goal is the implemented `symbolicStep_denotes_iff`: a returned success
 
 Existing composition recursively substitutes expressions. The result family is hash-consed with Lean's standard `ShareCommon.shareCommon'`: semantically the identity, implemented by the Lean runtime's common-subobject sharing primitive. This preserves a shared output graph; it does not claim to eliminate transient allocation during existing recursive substitution. No custom unsafe implementation or equality oracle is added.
 
-## Labeled STS review fixes and validation (r3): PASS
+## Axiom cleanup and validation (r4): PASS
+
+`Env` and the unchanged `symbolicStep_length` statement now depend on exactly `[propext]`. The other five declarations in `ProofAudit.lean` still report `[propext, Classical.choice, Quot.sound]`; this is not a claim to eliminate those axioms from the full evaluator.
+
+The scoped FloatLib patch replaces the IEEE format-bound proofs with direct arithmetic lemmas and reads exponent/fraction fields as natural numbers, avoiding intermediate bit-vector bounds proofs. AYXG's fraction-width proof also uses the direct arithmetic lemma. The format and field-extraction values remain definitionally equal to their previous definitions. `tests/lean/FPAxiomRegression.lean` checks those equalities with `rfl` and guards the two exact axiom lists; CI runs it after the Lean build. No theorem statements, assumptions, or upstream dependency revisions changed.
+
+Validation ran on NixOS with the pinned Lean 4.34.0 environment: the full AYXG library, the new regression, symbolic-step examples, standalone bridge examples, and the six-declaration proof audit passed. The executed snapshot is identified by [43 source/configuration hashes](evidence/r4/source-hashes.txt), all checked against the local files. The build rehashed its inputs while reusing dependency outputs. [Full log](evidence/r4/validation.log), [launch script](evidence/r4/run-validation.sh), and [resource record](evidence/r4/resources.properties) are retained. The bounded `fleet-build.slice` child exited 0, used 234.440 CPU seconds, and peaked at 1,290,223,616 bytes within its 2 GiB limit.
+
+Reproduce the checks from the current checkout:
+
+```sh
+nix develop .#ci --no-write-lock-file --command bash -euo pipefail -c '
+  lake -R -H build Ayxg
+  lake env lean tests/lean/FPAxiomRegression.lean
+  lake env lean tests/lean/SymbolicStepExamples.lean
+  lake env lean tests/lean_bridge/Bridge/Examples.lean
+  lake env lean notes/voogd-symbolic-step/ProofAudit.lean
+'
+```
+
+The [original dependency paths](evidence/r4/axiom-paths.log) also explain the `Quot.sound` findings: generated `omega` proofs used function extensionality, and the intermediate bit-vector bounds proof reached it through the natural-number bitwise library. These paths no longer occur in the length theorem's dependencies. The original path-inspection helper is retained as [AxiomPaths.lean](evidence/r4/AxiomPaths.lean); its log describes the pre-fix snapshot.
+
+## Historical labeled STS review fixes and validation (r3): PASS
 
 Tested implementation: `d1e060d5fca857c2148fce69b59b58ff03e48e40`. The following evidence commit changes documentation only. Source hashes for the executed Lean files and build configuration are in [evidence/r3/source-hashes.txt](evidence/r3/source-hashes.txt).
 
@@ -27,7 +49,7 @@ nix develop .#ci --no-write-lock-file --command lake env lean notes/voogd-symbol
 
 The six audited declarations have no admitted proofs. Their current axiom footprint is `[propext, Classical.choice, Quot.sound]`, **including `symbolicStep_length`**. Restricting that proof to `List.length_map` does not remove dependencies reached through its STS argument type. This differs from the historical r2 length result below.
 
-TODO (follow-up PR): reduce the inherited axiom footprint without weakening the statements or adding assumptions. The traced choice dependency is `Env` → `Denote` → `FPValue` → `FPFormat.floatFormat` → FloatLib's `FloatFormat.ieee` → `ieeeBias_le_maxFiniteExponent` → `Nat.pow_lt_pow_right`. The last lemma refers to an iff theorem whose opposite direction uses `Classical.not_imp`. A checked scratch proof of the identical format bound uses `Nat.pow_lt_pow_of_lt` instead and has footprint `[propext, Quot.sound]`. This removes choice from that bound; the remaining `Quot.sound` paths and the complete theorem footprint still need investigation. No FloatLib or environment representation change is included here. See the [dependency audit](evidence/r3/env-axiom-audit.log), [scratch proof](evidence/r3/PowDependencyAudit.lean), and [scratch result](evidence/r3/pow-dependency-audit.log).
+The r3 audit traced the choice dependency through `Env` → `Denote` → `FPValue` → `FPFormat.floatFormat` → FloatLib's `FloatFormat.ieee` → `ieeeBias_le_maxFiniteExponent` → `Nat.pow_lt_pow_right`. The last lemma refers to an iff theorem whose opposite direction uses `Classical.not_imp`. A scratch proof of the identical format bound removed choice but retained `Quot.sound`. This was initially deferred; r4 resolves the complete `symbolicStep_length` footprint above. The [dependency audit](evidence/r3/env-axiom-audit.log), [scratch proof](evidence/r3/PowDependencyAudit.lean), and [scratch result](evidence/r3/pow-dependency-audit.log) retain that intermediate evidence.
 
 The [validation log](evidence/r3/validation.log) records the full library build, examples, and theorem audit. The bounded job used `MemoryMax=2G`, `MemorySwapMax=0`, `CPUQuota=200%`, and `LEAN_NUM_THREADS=1` under `fleet-build.slice`; it exited 0, peaked at 495,407,104 bytes, and used 22.619 CPU seconds. [Launch script](evidence/r3/run.sh) and [resource record](evidence/r3/resources.properties) are retained. Existing dependency outputs were reused. Repository sources and Git metadata were copied from the local checkout; no remote source edits or dependency overrides were used. The standalone Lean bridge examples passed; the separate LeanPy/FFI harness was not validated in this run.
 

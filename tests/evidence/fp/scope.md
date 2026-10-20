@@ -64,3 +64,19 @@ qualified `lake env true` passed on NixOS. The writable dependency copy is keyed
 by scoped source revision222236f0, so the committed path is independent of Nix
 store hashes on different platforms. This metadata check did not rebuild the
 whole root library; the full library modules were built in the real FFI closure.
+
+The current checkout also applies `nix/floatlib-axiom-footprint.patch`. It uses
+direct arithmetic proofs for the IEEE format bounds and reads exponent/fraction
+fields without intermediate bounded bit-vectors. The field values are
+definitionally equal to the original expressions; two upstream proof scripts
+drop rewrites made unnecessary by that simplification. The upstream FloatLib and
+Mathlib revisions remain unchanged. `tests/lean/FPAxiomRegression.lean` checks
+these equalities and requires exactly `[propext]` for `Env` and
+`symbolicStep_length`.
+
+The writable-source key is now
+`7553d244c7a4e02ffbbdc21eb66b70b9f37bb5e39e6f36a2dedb7834e1f830af`:
+SHA-256 of the upstream revision plus a newline, then the exact bytes of
+`floatlib-smt-rna.patch` followed by `floatlib-axiom-footprint.patch`. It identifies
+this patched source set; the earlier evidence above retains its original source
+revision.
