@@ -22,5 +22,6 @@ require floatlib from (run_io do
     if permissions.exitCode != 0 then throw <| IO.userError permissions.stderr
   return writable)
 
+@[default_target]
 lean_lib Ayxg where
   globs := #[`Ayxg.*]
