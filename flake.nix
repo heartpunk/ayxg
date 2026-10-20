@@ -21,7 +21,18 @@
         in let floatlib = pkgs.applyPatches {
           name = "floatlib-ayxg-scoped";
           src = floatlib-src;
-          patches = [ ./nix/floatlib-smt-rna.patch ./nix/floatlib-axiom-footprint.patch ];
+          patches = [
+            # TODO(upstream-floatlib-smt-rna): Propose the five-mode SMT/RNA
+            # extension upstream as a separate feature; replace this patch
+            # when a compatible upstream implementation covers its semantics.
+            ./nix/floatlib-smt-rna.patch
+            # TODO(upstream-floatlib-axioms): Port the axiom-footprint cleanup
+            # to upstream FloatLib and submit it; retire this patch once a
+            # compatible pin includes it and the rfl/axiom regressions pass.
+            # If this requires a Lean upgrade, coordinate Mathlib, IFRL, and
+            # lean4-nix pins across AYXG and WRUH rather than bumping FloatLib alone.
+            ./nix/floatlib-axiom-footprint.patch
+          ];
         };
         in let z3Python = import ./nix/z3-python.nix { inherit pkgs; };
           python = pkgs.python312.withPackages (_: [ z3Python ]);
