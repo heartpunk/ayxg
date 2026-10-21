@@ -1,6 +1,6 @@
 {
   description = "AYXG shared formal STS library environment";
-  inputs.ifrl.url = "github:heartpunk/ifrl/c69a322ec903672a2def1841be661eb6a339c89b";
+  inputs.ifrl.url = "github:heartpunk/ifrl/1c30d79c68280e1beaec9a557ee1332e07caa7ba";
   inputs.nixpkgs.follows = "ifrl/nixpkgs";
   inputs.lean4-nix = {
     follows = "ifrl/lean4-nix";
@@ -37,11 +37,16 @@
           ];
         };
         in let z3Python = import ./nix/z3-python.nix { inherit pkgs; };
-          python = pkgs.python312.withPackages (_: [ z3Python ]);
+          python = pkgs.python312.withPackages (ps: [
+            z3Python
+            ps.coverage
+            ps.hypothesis
+            ps.pytest
+          ]);
           # Use the same platform-specific Bazel package as the shared runtime.
           bazel = import (ifrl.outPath + "/nix/bazel.nix") { inherit pkgs; };
           projectShell = {
-            packages = [ pkgs.git pkgs.lean python bazel ];
+            packages = [ pkgs.git pkgs.lean pkgs.ruff python bazel ];
             AYXG_NIX_LIBSTDCXX_ROOT =
               pkgs.lib.optionalString pkgs.stdenv.isLinux "${pkgs.stdenv.cc.cc.lib}";
             shellHook = ''

@@ -1,0 +1,18 @@
+{
+  "sources": [
+    "python/ayxg"
+  ],
+  "pythonpath": [
+    "python"
+  ],
+  "tests": [
+    [
+      "-m",
+      "pytest",
+      "-p",
+      "no:cacheprovider",
+      "-q",
+      "tests/unit"
+    ]
+  ]
+}

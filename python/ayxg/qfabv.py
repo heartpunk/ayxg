@@ -5,12 +5,15 @@ names and widths. S is a concrete Bool/BV/Array sort witness. Python enforces
 local structural invariants; the corresponding Lean definitions state laws.
 """
 from __future__ import annotations
+
 from dataclasses import dataclass
 from typing import Generic, TypeAlias, TypeVar
-from .expr import BOOL, Declaration, TermSort, TypedExpr, variable_sorts, free_references
-from .substitution import substitute_exprs
-from .sts import STS
+
+from .expr import BOOL, Declaration, TermSort, TypedExpr, free_references
+from .fp import FPValue, RoundingMode
 from .segments import Adapter, Segment
+from .sts import STS
+from .substitution import substitute_exprs
 
 C = TypeVar("C")
 D = TypeVar("D")
@@ -178,8 +181,6 @@ class QFAbvArrayValue:
                     or not 0 <= value < (1 << self.sort.value_width)
                     or value == self.default):
                 raise ValueError("array entry outside canonical finite support")
-
-from .fp import FPValue, RoundingMode
 
 Value: TypeAlias = bool | int | QFAbvArrayValue | FPValue | RoundingMode
 
