@@ -46,7 +46,7 @@
           # Use the same platform-specific Bazel package as the shared runtime.
           bazel = import (ifrl.outPath + "/nix/bazel.nix") { inherit pkgs; };
           projectShell = {
-            packages = [ pkgs.git pkgs.lean python bazel ];
+            packages = [ pkgs.git pkgs.lean pkgs.ruff python bazel ];
             AYXG_NIX_LIBSTDCXX_ROOT =
               pkgs.lib.optionalString pkgs.stdenv.isLinux "${pkgs.stdenv.cc.cc.lib}";
             shellHook = ''
