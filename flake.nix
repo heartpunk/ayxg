@@ -1,6 +1,6 @@
 {
   description = "AYXG shared formal STS library environment";
-  inputs.ifrl.url = "github:heartpunk/ifrl/e8974a263d6784422e90b076e9a058a6737f4ef1";
+  inputs.ifrl.url = "github:heartpunk/ifrl/1ded8bfc9ada2e4939a796fae7d5133923eddf40";
   inputs.nixpkgs.follows = "ifrl/nixpkgs";
   inputs.lean4-nix = {
     follows = "ifrl/lean4-nix";
