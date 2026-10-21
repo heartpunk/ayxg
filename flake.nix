@@ -37,7 +37,12 @@
           ];
         };
         in let z3Python = import ./nix/z3-python.nix { inherit pkgs; };
-          python = pkgs.python312.withPackages (_: [ z3Python ]);
+          python = pkgs.python312.withPackages (ps: [
+            z3Python
+            ps.coverage
+            ps.hypothesis
+            ps.pytest
+          ]);
           # Use the same platform-specific Bazel package as the shared runtime.
           bazel = import (ifrl.outPath + "/nix/bazel.nix") { inherit pkgs; };
           projectShell = {
