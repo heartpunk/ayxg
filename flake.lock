@@ -65,17 +65,17 @@
         "rust-overlay": "rust-overlay"
       },
       "locked": {
-        "lastModified": 1792554904,
-        "narHash": "sha256-HeknNMjWGcZX8hM3uwkKbOZAZFCEHTKq6WOe+0dmuTA=",
+        "lastModified": 1792605122,
+        "narHash": "sha256-f47nG/co6/s6GcPdanht70xjtYA4dA1rpTk1+VwX7rU=",
         "owner": "heartpunk",
         "repo": "ifrl",
-        "rev": "1ded8bfc9ada2e4939a796fae7d5133923eddf40",
+        "rev": "1c30d79c68280e1beaec9a557ee1332e07caa7ba",
         "type": "github"
       },
       "original": {
         "owner": "heartpunk",
         "repo": "ifrl",
-        "rev": "1ded8bfc9ada2e4939a796fae7d5133923eddf40",
+        "rev": "1c30d79c68280e1beaec9a557ee1332e07caa7ba",
         "type": "github"
       }
     },
