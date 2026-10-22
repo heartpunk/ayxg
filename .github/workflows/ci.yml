@@ -46,7 +46,7 @@ jobs:
           git config --global --add url.https://github.com/.insteadOf ssh://git@github.com/
           git config --global --add url.https://github.com/.insteadOf git@github.com:
       - name: Evaluate the pinned Nix flake
-        run: nix flake check --no-build --no-write-lock-file
+        run: nix flake check --no-write-lock-file
       - name: Run Python, Lean, and Bazel checks in the shared flake environment
         run: |
           nix develop .#ci --no-write-lock-file --command bash -euo pipefail -c '
