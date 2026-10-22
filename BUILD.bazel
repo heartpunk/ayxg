@@ -1,4 +1,3 @@
-load("@ayxg_pypi//:requirements.bzl", "requirement")
 load("@rules_python//python:defs.bzl", "py_library", "py_test")
 
 package(default_visibility = ["//visibility:public"])
@@ -19,7 +18,7 @@ py_library(
     name = "z3",
     srcs = ["python/ayxg/z3.py", "python/ayxg/fp_z3.py"],
     imports = ["python"],
-    deps = [":ayxg", requirement("z3-solver")],
+    deps = [":ayxg", "@shared_angr//:pkg"],
 )
 
 py_test(

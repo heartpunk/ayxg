@@ -6,7 +6,8 @@ arrays are compared extensionally by enumerating their bounded index domain.
 The expression, transition, and segment campaigns are in
 `differential_expr.py`, `differential_transition.py`, and
 `differential_segment.py`. `tests/unit` contains pytest contract examples and
-Hypothesis properties. Install the project test extra with `pip install -e .[test]`.
+Hypothesis properties. Run them in the shared flake environment:
+`nix develop .#ci --command bash -c 'PYTHONPATH=python python -m pytest -p no:cacheprovider -q tests/unit'`.
 
 The pinned lean.py revision is `5c972d1b0ceae56051b1e9960fe907e206a6a3bc`.
 Its FFI-only imports work with Lean 4.31. Its full Kernel/Z3 dependency closure
@@ -90,10 +91,10 @@ evaluations.
 
 ## Basic Python contract suite
 
-Run with the standard pytest runner after `pip install -e .[test]`:
+Run with the standard pytest runner from the shared flake environment:
 
 ```sh
-PYTHONPATH=python python -m pytest -p no:cacheprovider tests/unit
+nix develop .#ci --command bash -c 'PYTHONPATH=python python -m pytest -p no:cacheprovider -q tests/unit'
 ```
 
 The unit suite checks sort/expression serialization and rejection contracts,

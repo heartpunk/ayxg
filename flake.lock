@@ -65,17 +65,17 @@
         "rust-overlay": "rust-overlay"
       },
       "locked": {
-        "lastModified": 1792605122,
-        "narHash": "sha256-f47nG/co6/s6GcPdanht70xjtYA4dA1rpTk1+VwX7rU=",
+        "lastModified": 1792629951,
+        "narHash": "sha256-lefXqToQoZFigR5bnL/T9QxEz/BmBpCcQTs7mWYO898=",
         "owner": "heartpunk",
         "repo": "ifrl",
-        "rev": "1c30d79c68280e1beaec9a557ee1332e07caa7ba",
+        "rev": "8b2ebf5e623cd024c5afb818dcf9159b6c20d0c7",
         "type": "github"
       },
       "original": {
         "owner": "heartpunk",
         "repo": "ifrl",
-        "rev": "1c30d79c68280e1beaec9a557ee1332e07caa7ba",
+        "rev": "8b2ebf5e623cd024c5afb818dcf9159b6c20d0c7",
         "type": "github"
       }
     },
@@ -137,10 +137,6 @@
       "inputs": {
         "floatlib-src": "floatlib-src",
         "ifrl": "ifrl",
-        "lean4-nix": [
-          "ifrl",
-          "lean4-nix"
-        ],
         "nixpkgs": [
           "ifrl",
           "nixpkgs"
