@@ -1,6 +1,6 @@
 {
   description = "AYXG shared formal STS library environment";
-  inputs.ifrl.url = "github:heartpunk/ifrl/8b2ebf5e623cd024c5afb818dcf9159b6c20d0c7";
+  inputs.ifrl.url = "github:heartpunk/ifrl/main";
   inputs.nixpkgs.follows = "ifrl/nixpkgs";
   inputs.floatlib-src = {
     url = "github:lean-dojo/FloatLib/1e83f09ed8c41a953cf8f93d26c210778177b94a";
