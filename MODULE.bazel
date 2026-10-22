@@ -3,20 +3,17 @@ module(name = "ayxg", version = "0.1.0")
 bazel_dep(name = "platforms", version = "1.1.0")
 
 bazel_dep(name = "rules_python", version = "1.7.0")
+bazel_dep(name = "ifrl", version = "0.1.0")
+
+git_override(
+    module_name = "ifrl",
+    remote = "https://github.com/heartpunk/ifrl.git",
+    commit = "8b2ebf5e623cd024c5afb818dcf9159b6c20d0c7",
+)
 
 python = use_extension("@rules_python//python/extensions:python.bzl", "python")
 python.defaults(python_version = "3.12")
 python.toolchain(python_version = "3.12")
-
-pip = use_extension("@rules_python//python/extensions:pip.bzl", "pip")
-pip.parse(
-    hub_name = "ayxg_pypi",
-    download_only = True,
-    python_interpreter = "python3.12",
-    python_version = "3.12",
-    requirements_lock = "//:requirements_z3.txt",
-)
-use_repo(pip, "ayxg_pypi")
 
 nix_python_runtime = use_repo_rule(
     "@rules_python//python/local_toolchains:repos.bzl", "local_runtime_repo"
@@ -35,6 +32,11 @@ nix_python_toolchains(
     target_compatible_with = {"nix_python_3_12": ["HOST_CONSTRAINTS"]},
 )
 register_toolchains("@nix_python_toolchains//:all")
+
+angr_environment_repository = use_repo_rule(
+    "@ifrl//bazel/angr:repository.bzl", "angr_environment_repository"
+)
+angr_environment_repository(name = "shared_angr")
 
 
 native = use_extension("//tools:native.bzl", "native")
