@@ -54,6 +54,7 @@ jobs:
             lake exe cache get
             lake build Ayxg
             lake env lean tests/lean/FPAxiomRegression.lean
+            lake env lean tests/lean/BvSDivRegression.lean
             bazel build //...
             bazel test //... --test_output=errors
           '
