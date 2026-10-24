@@ -118,6 +118,8 @@ class TestSortAndExpressionContracts:
             assert restored == node
             return eval_expr(expr(ctx, restored), state)
 
+        assert divide(7, 3) == 2            # 7 / 3 = 2
+        assert divide(0, 0) == 0xFF         # zero is nonnegative
         assert divide(0xF9, 3) == 0xFE       # -7 / 3 = -2, toward zero
         assert divide(7, 0xFD) == 0xFE       # 7 / -3 = -2
         assert divide(0xF9, 0xFD) == 2       # -7 / -3 = 2
