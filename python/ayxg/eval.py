@@ -13,8 +13,18 @@ from typing import TypeVar, overload
 from .expr import ArtifactError, TypedExpr
 from .fp import FPInterpretation, FPValue, RoundingMode
 from .qfabv import (
-    ArraySort, BoolSort, BVSort, FPSort, RoundingModeSort, QFAbvArrayValue, QFAbvExpr, QFAbvStep,
-    QFAbvUpdate, QFAbvValuation, Sort, Value,
+    ArraySort,
+    BoolSort,
+    BVSort,
+    FPSort,
+    QFAbvArrayValue,
+    QFAbvExpr,
+    QFAbvStep,
+    QFAbvUpdate,
+    QFAbvValuation,
+    RoundingModeSort,
+    Sort,
+    Value,
 )
 
 C = TypeVar("C")
