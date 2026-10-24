@@ -17,8 +17,6 @@ from ayxg.expr import (
     UnsupportedTheoryError,
 )
 
-
-
 _BINARY = {
     z3.Z3_OP_BADD: "bv_add",
     z3.Z3_OP_BSUB: "bv_sub",
