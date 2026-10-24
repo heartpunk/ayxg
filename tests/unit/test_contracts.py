@@ -81,7 +81,7 @@ class TestSortAndExpressionContracts:
             TypedExpr.equal(x, y), TypedExpr.equal(p, TypedExpr.bool_lit(False)),
             TypedExpr.unary("bv_not", x),
             *(TypedExpr.binary(op, x, y) for op in [
-                "bv_add", "bv_sub", "bv_mul", "bv_udiv", "bv_urem", "bv_and",
+                "bv_add", "bv_sub", "bv_mul", "bv_udiv", "bv_sdiv", "bv_urem", "bv_and",
                 "bv_or", "bv_xor", "bv_shl", "bv_lshr", "bv_ashr",
                 "bv_ult", "bv_ule", "bv_slt", "bv_sle"]),
             TypedExpr.sign_extend(x, 2), TypedExpr("zero_extend", TermSort.bv(6), (x,), amount=2),
@@ -97,16 +97,33 @@ class TestSortAndExpressionContracts:
         state = QFAbvValuation(context, values)
         expected = [
             True, True, 3, QFAbvArrayValue(ArraySort(2, 4), 3), False, False,
-            True, state.values[4], False, False, 10, 12, 14, 3, 0, 5, 5, 7,
+            True, state.values[4], False, False, 10, 12, 14, 3, 0, 0, 5, 5, 7,
             2, 0, 0, 0, True, True, True, True, 5, 5, 61, 2, 0x55, 0, 3,
             QFAbvArrayValue(ArraySort(2, 4), 0, ((1, 3), (2, 3))),
         ]
-        assert len(expressions) == 34
+        assert len(expressions) == 35
         for node, result in zip(expressions, expected, strict=True):
             assert TypedExpr.from_data(node.to_data()) == node
             before = eval_expr(expr(context, node), state)
             after = eval_expr(expr(context, TypedExpr.from_data(node.to_data())), state)
             assert before == after == result, node
+
+    def test_signed_division_uses_smt_truncation_and_edge_semantics(self):
+        ctx = QFAbvContext(())
+        state = QFAbvValuation(ctx, ())
+        def divide(left, right):
+            node = TypedExpr.binary("bv_sdiv", TypedExpr.bv_lit(8, left),
+                                    TypedExpr.bv_lit(8, right))
+            restored = TypedExpr.from_data(node.to_data())
+            assert restored == node
+            return eval_expr(expr(ctx, restored), state)
+
+        assert divide(0xF9, 3) == 0xFE       # -7 / 3 = -2, toward zero
+        assert divide(7, 0xFD) == 0xFE       # 7 / -3 = -2
+        assert divide(0xF9, 0xFD) == 2       # -7 / -3 = 2
+        assert divide(7, 0) == 0xFF          # nonnegative / 0 => all ones
+        assert divide(0xF9, 0) == 1          # negative / 0 => 1
+        assert divide(0x80, 0xFF) == 0x80    # signed minimum / -1 wraps
 
     def test_smt_bitvector_edge_results(self):
         ctx = QFAbvContext(())

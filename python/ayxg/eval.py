@@ -112,6 +112,19 @@ def _apply(node: TypedExpr, args: tuple[Value, ...], variables: Mapping[str, Val
         return (left * right) & mask
     if op == "bv_udiv":
         return mask if right == 0 else left // right
+    if op == "bv_sdiv":
+        signed_left, signed_right = _signed(left, width), _signed(right, width)
+        if signed_right == 0:
+            return 1 if signed_left < 0 else mask
+        # SMT-LIB signed division truncates toward zero. Computing magnitudes
+        # avoids Python's floor-division behavior for negative operands.
+        quotient = abs(signed_left) // abs(signed_right)
+        signed_quotient = (
+            -quotient
+            if (signed_left < 0) != (signed_right < 0)
+            else quotient
+        )
+        return signed_quotient & mask
     if op == "bv_urem":
         return left if right == 0 else left % right
     if op == "bv_and":

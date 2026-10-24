@@ -45,7 +45,7 @@ def lookupIndex : Nat → (Γ : Ctx) → Except String (TypedExpr Γ)
 
 def binOp : String → Option BvBinOp
   | "bv_add" => some .add | "bv_sub" => some .sub | "bv_mul" => some .mul
-  | "bv_udiv" => some .udiv | "bv_urem" => some .urem | "bv_and" => some .and
+  | "bv_udiv" => some .udiv | "bv_sdiv" => some .sdiv | "bv_urem" => some .urem | "bv_and" => some .and
   | "bv_or" => some .or | "bv_xor" => some .xor | "bv_shl" => some .shl
   | "bv_lshr" => some .lshr | "bv_ashr" => some .ashr | _ => none
 def parseBindingsWith {m : Type → Type} [Monad m] [MonadExceptOf String m]
@@ -284,6 +284,7 @@ private partial def writeExprWith {Γ : Ctx} {s : TermSort} (keyOf : NodeKey) (e
       | .sub => "bv_sub"
       | .mul => "bv_mul"
       | .udiv => "bv_udiv"
+      | .sdiv => "bv_sdiv"
       | .urem => "bv_urem"
       | .and => "bv_and"
       | .or => "bv_or"

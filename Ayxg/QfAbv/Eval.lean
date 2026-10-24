@@ -40,6 +40,7 @@ namespace Eval
   | .sub => a - b
   | .mul => a * b
   | .udiv => BitVec.smtUDiv a b
+  | .sdiv => BitVec.smtSDiv a b
   | .urem => a % b
   | .and => a &&& b
   | .or => a ||| b

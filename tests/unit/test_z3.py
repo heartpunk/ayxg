@@ -21,7 +21,7 @@ class ConversionTests(unittest.TestCase):
         a = z3.Array("a", z3.BitVecSort(8,ctx), z3.BitVecSort(8,ctx))
         terms = [b, z3.BoolVal(True,ctx), x, z3.BitVecVal(255,8,ctx),
                  z3.Not(b), z3.And(b,c), z3.Or(b,c), ~x,
-                 x+y, x-y, x*y, z3.UDiv(x,y), z3.URem(x,y),
+                 x+y, x-y, x*y, z3.UDiv(x,y), x / y, z3.URem(x,y),
                  x&y, x|y, x^y, x<<y, z3.LShR(x,y), x>>y,
                  z3.ULT(x,y), z3.ULE(x,y), x<y, x<=y, z3.UGE(x,y),
                  x==y, z3.Distinct(x,y), z3.If(b,x,y),
@@ -35,6 +35,17 @@ class ConversionTests(unittest.TestCase):
                 rebuilt = expr_to_z3(typed,variables,ctx)
                 solver=z3.Solver(ctx=ctx); solver.add(term != rebuilt)
                 self.assertEqual(solver.check(),z3.unsat)
+
+    def test_signed_division_imports_and_exports_as_signed(self):
+        ctx = z3.Context()
+        x, y = z3.BitVecs("x y", 8, ctx=ctx)
+        term = x / y
+        typed = expr_from_z3(term)
+        self.assertEqual(typed.op, "bv_sdiv")
+        rebuilt = expr_to_z3(typed, {"x": x, "y": y}, ctx)
+        solver = z3.Solver(ctx=ctx)
+        solver.add(term != rebuilt)
+        self.assertEqual(solver.check(), z3.unsat)
 
     def test_array_equality_ground_witness(self):
         sort = z3.BitVecSort(4)

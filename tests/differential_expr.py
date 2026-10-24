@@ -22,7 +22,7 @@ from lean_py import LeanLibrary
 from ayxg import Declaration, QFAbvArrayValue, QFAbvContext, QFAbvExpr, QFAbvValuation, TermSort, TypedExpr, eval_expr
 from ayxg.qfabv import ArraySort, Value, decode_sort
 
-BV_OPS = ("bv_add", "bv_sub", "bv_mul", "bv_udiv", "bv_urem", "bv_and", "bv_or", "bv_xor", "bv_shl", "bv_lshr", "bv_ashr")
+BV_OPS = ("bv_add", "bv_sub", "bv_mul", "bv_udiv", "bv_sdiv", "bv_urem", "bv_and", "bv_or", "bv_xor", "bv_shl", "bv_lshr", "bv_ashr")
 CMP_OPS = ("bv_ult", "bv_ule", "bv_slt", "bv_sle")
 OPS = ("var", "bool_lit", "bv_lit", "const_array", "bool_not", "bool_and", "bool_or", "ite", "eq", *BV_OPS, "bv_not", "zero_extend", "sign_extend", "extract", "concat", "select", "store", *CMP_OPS)
 
@@ -165,9 +165,17 @@ def boundary_cases():
         mask = (1 << width) - 1
         def literal(value):
             return TypedExpr.bv_lit(width, value)
-        for op in ["bv_udiv", "bv_urem"]:
+        for op in ["bv_udiv", "bv_sdiv", "bv_urem"]:
             for dividend in [0, 1, mask]:
                 yield Case(context, state, TypedExpr.binary(op, literal(dividend), literal(0)))
+        if width >= 4:
+            negative_seven, negative_three = mask - 6, mask - 2
+            for dividend, divisor in [(negative_seven, 3), (7, negative_three),
+                                      (negative_seven, negative_three)]:
+                yield Case(context, state, TypedExpr.binary(
+                    "bv_sdiv", literal(dividend), literal(divisor)))
+        yield Case(context, state, TypedExpr.binary(
+            "bv_sdiv", literal(1 << (width - 1)), literal(mask)))
         for op in ["bv_shl", "bv_lshr", "bv_ashr"]:
             for amount in sorted({0, width - 1, width, width + 1, mask}):
                 if amount <= mask:

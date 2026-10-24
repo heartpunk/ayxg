@@ -17,6 +17,7 @@ _BINARY = {
     z3.Z3_OP_BSUB: "bv_sub",
     z3.Z3_OP_BMUL: "bv_mul",
     z3.Z3_OP_BUDIV: "bv_udiv",
+    z3.Z3_OP_BSDIV: "bv_sdiv",
     z3.Z3_OP_BUREM: "bv_urem",
     z3.Z3_OP_BAND: "bv_and",
     z3.Z3_OP_BOR: "bv_or",
@@ -153,6 +154,8 @@ def expr_to_z3(
             result = args[0] * args[1]
         elif node.op == "bv_udiv":
             result = z3.UDiv(args[0], args[1])
+        elif node.op == "bv_sdiv":
+            result = args[0] / args[1]
         elif node.op == "bv_urem":
             result = z3.URem(args[0], args[1])
         elif node.op == "bv_and":
