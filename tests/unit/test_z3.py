@@ -21,7 +21,7 @@ class ConversionTests(unittest.TestCase):
         a = z3.Array("a", z3.BitVecSort(8,ctx), z3.BitVecSort(8,ctx))
         terms = [b, z3.BoolVal(True,ctx), x, z3.BitVecVal(255,8,ctx),
                  z3.Not(b), z3.And(b,c), z3.Or(b,c), ~x,
-                 x+y, x-y, x*y, z3.UDiv(x,y), z3.URem(x,y),
+                 x+y, x-y, x*y, z3.UDiv(x,y), x / y, z3.URem(x,y),
                  x&y, x|y, x^y, x<<y, z3.LShR(x,y), x>>y,
                  z3.ULT(x,y), z3.ULE(x,y), x<y, x<=y, z3.UGE(x,y),
                  x==y, z3.Distinct(x,y), z3.If(b,x,y),
@@ -35,6 +35,45 @@ class ConversionTests(unittest.TestCase):
                 rebuilt = expr_to_z3(typed,variables,ctx)
                 solver=z3.Solver(ctx=ctx); solver.add(term != rebuilt)
                 self.assertEqual(solver.check(),z3.unsat)
+
+    def test_signed_division_imports_and_exports_as_signed(self):
+        ctx = z3.Context()
+        x, y = z3.BitVecs("x y", 8, ctx=ctx)
+        term = x / y
+        typed = expr_from_z3(term)
+        self.assertEqual(typed.op, "bv_sdiv")
+        rebuilt = expr_to_z3(typed, {"x": x, "y": y}, ctx)
+        solver = z3.Solver(ctx=ctx)
+        solver.add(term != rebuilt)
+        self.assertEqual(solver.check(), z3.unsat)
+
+    def test_signed_division_evaluator_matches_z3(self):
+        from ayxg import BVSort, Declaration, QFAbvContext, QFAbvExpr, QFAbvValuation, eval_expr
+
+        ctx = z3.Context()
+        for width in (1, 2, 3, 4, 8, 16, 32, 64, 128):
+            x, y = z3.BitVecs("x y", width, ctx=ctx)
+            reference = x / y
+            typed = TypedExpr.from_data(expr_from_z3(reference).to_data())
+            context = QFAbvContext(tuple(
+                Declaration(name, TermSort.bv(width)) for name in ("x", "y")
+            ))
+            expression = QFAbvExpr(context, BVSort(width), typed)
+            sign, mask = 1 << (width - 1), (1 << width) - 1
+            # Exhaust all small widths; larger widths include zero, both signs,
+            # truncating quotients, signed overflow, and values beyond float precision.
+            values = range(1 << width) if width <= 4 else sorted({
+                0, 1, 2, 3, 7, sign - 1, sign, sign + 1,
+                mask - 6, mask - 2, mask - 1, mask,
+            })
+            for left in values:
+                for right in values:
+                    with self.subTest(width=width, left=left, right=right):
+                        expected = z3.simplify(z3.substitute(reference,
+                            (x, z3.BitVecVal(left, width, ctx=ctx)),
+                            (y, z3.BitVecVal(right, width, ctx=ctx)))).as_long()
+                        actual = eval_expr(expression, QFAbvValuation(context, (left, right)))
+                        self.assertEqual(actual, expected)
 
     def test_array_equality_ground_witness(self):
         sort = z3.BitVecSort(4)

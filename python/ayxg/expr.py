@@ -4,9 +4,11 @@ This syntax includes positional variables and parallel bindings, with positive-w
 Ayxg.QfAbv.Expr. Context membership is provided by ayxg.qfabv.QFAbvExpr.
 """
 from __future__ import annotations
-from dataclasses import dataclass
+
 import re
-from typing import Any, Iterable, Mapping, cast
+from collections.abc import Iterable, Mapping
+from dataclasses import dataclass
+from typing import Any, cast
 
 class ArtifactError(ValueError):
     """An expression violates its structural typing contract."""
@@ -222,6 +224,7 @@ _BINARY_BV_OPS = {
     "bv_sub",
     "bv_mul",
     "bv_udiv",
+    "bv_sdiv",
     "bv_urem",
     "bv_and",
     "bv_or",

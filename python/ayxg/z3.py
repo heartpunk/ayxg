@@ -2,13 +2,20 @@
 
 from __future__ import annotations
 
-from ayxg.expr import BOOL, ArtifactError, UnsupportedTheoryError, Declaration, TermSort, TypedExpr
-
-from collections.abc import Sequence, Mapping
+from collections.abc import Iterator, Mapping, Sequence
 from contextlib import contextmanager
 from threading import local
-from typing import Iterator
+
 import z3
+
+from ayxg.expr import (
+    BOOL,
+    ArtifactError,
+    Declaration,
+    TermSort,
+    TypedExpr,
+    UnsupportedTheoryError,
+)
 
 
 
@@ -17,6 +24,7 @@ _BINARY = {
     z3.Z3_OP_BSUB: "bv_sub",
     z3.Z3_OP_BMUL: "bv_mul",
     z3.Z3_OP_BUDIV: "bv_udiv",
+    z3.Z3_OP_BSDIV: "bv_sdiv",
     z3.Z3_OP_BUREM: "bv_urem",
     z3.Z3_OP_BAND: "bv_and",
     z3.Z3_OP_BOR: "bv_or",
@@ -153,6 +161,8 @@ def expr_to_z3(
             result = args[0] * args[1]
         elif node.op == "bv_udiv":
             result = z3.UDiv(args[0], args[1])
+        elif node.op == "bv_sdiv":
+            result = args[0] / args[1]
         elif node.op == "bv_urem":
             result = z3.URem(args[0], args[1])
         elif node.op == "bv_and":
@@ -248,7 +258,7 @@ def _expr_from_z3_uncached(expression: z3.ExprRef) -> TypedExpr:
         return TypedExpr.bv_lit(expression.size(), expression.as_long())
 
     kind = expression.decl().kind()
-    from .fp_z3 import fp_leaf_from_z3, FP_Z3_OPERATORS
+    from .fp_z3 import FP_Z3_OPERATORS, fp_leaf_from_z3
     leaf = fp_leaf_from_z3(expression, sort)
     if leaf is not None:
         return leaf
