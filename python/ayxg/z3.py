@@ -39,6 +39,7 @@ _BINARY = {
 
 _REVERSED_BINARY = {
     z3.Z3_OP_UGEQ: "bv_ule",
+    z3.Z3_OP_SGT: "bv_slt",
 }
 
 _ASSOCIATIVE_BV = {
