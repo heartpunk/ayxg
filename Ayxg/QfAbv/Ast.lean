@@ -25,11 +25,11 @@ inductive TermSort where
 /-- Fixed bit-vector binary operators currently implemented by the compact AST.
 
 This is an initial QF_BV subset, not full SMT-LIB QF_ABV coverage. Missing
-operators still include signed remainder, rotates, repeat, `bvcomp`, and
-several derived bitwise variants such as nand/nor/xnor.
+operators still include rotates, repeat, `bvcomp`, and several derived
+bitwise variants such as nand/nor/xnor.
 -/
 inductive BvBinOp where
-  | add | sub | mul | udiv | sdiv | urem | and | or | xor | shl | lshr | ashr
+  | add | sub | mul | udiv | sdiv | urem | srem | and | or | xor | shl | lshr | ashr
   deriving DecidableEq, Repr
 
 /-- A named sorted declaration. Names are retained for parsing/printing/provenance;

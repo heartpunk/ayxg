@@ -1,0 +1,19 @@
+{
+  "operator": "bv_srem",
+  "cases": [
+    {"width": 1, "left": 1, "right": 0, "expected": 1},
+    {"width": 1, "left": 1, "right": 1, "expected": 0},
+    {"width": 2, "left": 3, "right": 2, "expected": 3},
+    {"width": 4, "left": 9, "right": 3, "expected": 15},
+    {"width": 4, "left": 7, "right": 13, "expected": 1},
+    {"width": 4, "left": 9, "right": 13, "expected": 15},
+    {"width": 8, "left": 128, "right": 255, "expected": 0},
+    {"width": 8, "left": 128, "right": 3, "expected": 254},
+    {"width": 8, "left": 7, "right": 0, "expected": 7},
+    {"width": 8, "left": 0, "right": 0, "expected": 0},
+    {"width": 64, "left": 18446744073709551609, "right": 3, "expected": 18446744073709551615},
+    {"width": 64, "left": 7, "right": 18446744073709551613, "expected": 1},
+    {"width": 64, "left": 18446744073709551609, "right": 0, "expected": 18446744073709551609},
+    {"width": 64, "left": 9223372036854775808, "right": 18446744073709551615, "expected": 0}
+  ]
+}
