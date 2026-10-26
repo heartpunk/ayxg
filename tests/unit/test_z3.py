@@ -1,7 +1,9 @@
 """Canonical converter contracts and SMT semantic round trips."""
 import unittest
 import ctypes
+import json
 import os
+from pathlib import Path
 if location := os.environ.get("AYXG_LIBSTDCXX_RLOCATION"):
     from python.runfiles import runfiles
     library = runfiles.Create().Rlocation(location)
@@ -21,7 +23,7 @@ class ConversionTests(unittest.TestCase):
         a = z3.Array("a", z3.BitVecSort(8,ctx), z3.BitVecSort(8,ctx))
         terms = [b, z3.BoolVal(True,ctx), x, z3.BitVecVal(255,8,ctx),
                  z3.Not(b), z3.And(b,c), z3.Or(b,c), ~x,
-                 x+y, x-y, x*y, z3.UDiv(x,y), x / y, z3.URem(x,y),
+                 x+y, x-y, x*y, z3.UDiv(x,y), x / y, z3.URem(x,y), z3.SRem(x,y),
                  x&y, x|y, x^y, x<<y, z3.LShR(x,y), x>>y,
                  z3.ULT(x,y), z3.ULE(x,y), x<y, x<=y, z3.UGE(x,y),
                  x==y, z3.Distinct(x,y), z3.If(b,x,y),
@@ -74,6 +76,41 @@ class ConversionTests(unittest.TestCase):
                             (y, z3.BitVecVal(right, width, ctx=ctx)))).as_long()
                         actual = eval_expr(expression, QFAbvValuation(context, (left, right)))
                         self.assertEqual(actual, expected)
+
+    def test_signed_remainder_shared_vectors_match_python_z3_and_codec(self):
+        from ayxg import BVSort, QFAbvContext, QFAbvExpr, QFAbvValuation, eval_expr
+        from ayxg import codec
+
+        fixture = json.loads(
+            (Path(__file__).resolve().parents[1] / "fixtures" / "bvsrem.json").read_text()
+        )
+        self.assertEqual(fixture["operator"], "bv_srem")
+        ctx = z3.Context()
+        for case in fixture["cases"]:
+            width, left, right, expected = (
+                case[key] for key in ("width", "left", "right", "expected")
+            )
+            with self.subTest(width=width, left=left, right=right):
+                node = TypedExpr.binary(
+                    fixture["operator"], TypedExpr.bv_lit(width, left),
+                    TypedExpr.bv_lit(width, right),
+                )
+                restored = TypedExpr.from_data(node.to_data())
+                self.assertEqual(restored.op, "bv_srem")
+                self.assertEqual(restored, node)
+
+                context = QFAbvContext(())
+                expression = QFAbvExpr(context, BVSort(width), restored)
+                actual = eval_expr(expression, QFAbvValuation(context, ()))
+                self.assertEqual(actual, expected)
+
+                artifact = codec.loads(codec.dumps({"expression": restored}))
+                self.assertEqual(artifact["expression"], restored)
+
+                z3_left = z3.BitVecVal(left, width, ctx=ctx)
+                z3_right = z3.BitVecVal(right, width, ctx=ctx)
+                z3_result = z3.simplify(z3.SRem(z3_left, z3_right)).as_long()
+                self.assertEqual(z3_result, expected)
 
     def test_array_equality_ground_witness(self):
         sort = z3.BitVecSort(4)
