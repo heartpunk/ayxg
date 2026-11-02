@@ -1,0 +1,27 @@
+version: 2
+
+multi-ecosystem-groups:
+  suite-dependencies:
+    schedule:
+      interval: "weekly"
+
+updates:
+  - package-ecosystem: "nix"
+    directory: "/"
+    patterns: ["*"]
+    multi-ecosystem-group: "suite-dependencies"
+
+  - package-ecosystem: "bazel"
+    directory: "/"
+    patterns: ["*"]
+    multi-ecosystem-group: "suite-dependencies"
+
+  - package-ecosystem: "pip"
+    directory: "/"
+    patterns: ["*"]
+    multi-ecosystem-group: "suite-dependencies"
+
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    patterns: ["*"]
+    multi-ecosystem-group: "suite-dependencies"
