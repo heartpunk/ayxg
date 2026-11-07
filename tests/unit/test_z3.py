@@ -47,6 +47,34 @@ class ConversionTests(unittest.TestCase):
         solver.add(term != rebuilt)
         self.assertEqual(solver.check(), z3.unsat)
 
+    def test_signed_greater_than_imports_as_reversed_signed_less_than(self):
+        ctx = z3.Context()
+        x, y = z3.BitVecs("x y", 8, ctx=ctx)
+        term = x > y
+        typed = expr_from_z3(term)
+        self.assertEqual(typed.op, "bv_slt")
+        self.assertEqual((typed.args[0].name, typed.args[1].name), ("y", "x"))
+        rebuilt = expr_to_z3(typed, {"x": x, "y": y}, ctx)
+        solver = z3.Solver(ctx=ctx)
+        solver.add(term != rebuilt)
+        self.assertEqual(solver.check(), z3.unsat)
+
+        edge_cases = (
+            (0x7F, 0x80, True),
+            (0x80, 0x7F, False),
+            (0xFF, 0x00, False),
+            (0x00, 0xFF, True),
+            (0x80, 0x80, False),
+        )
+        for left, right, expected in edge_cases:
+            with self.subTest(left=left, right=right):
+                evaluated = z3.simplify(z3.substitute(
+                    rebuilt,
+                    (x, z3.BitVecVal(left, 8, ctx=ctx)),
+                    (y, z3.BitVecVal(right, 8, ctx=ctx)),
+                ))
+                self.assertEqual(z3.is_true(evaluated), expected)
+
     def test_signed_division_evaluator_matches_z3(self):
         from ayxg import BVSort, Declaration, QFAbvContext, QFAbvExpr, QFAbvValuation, eval_expr
 
