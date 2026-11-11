@@ -1,0 +1,713 @@
+{
+  "description": "Extracted RDX update expressions for two IDIV occurrences in chroot print_int. The retained failure does not identify the original failing instruction.",
+  "artifact_sha256": "301ffaa09ff7ded6d0924e4dadb9665bede4a064e58e7373e07cd661462f0d57",
+  "artifact_path": "functions/0000000000091550.json",
+  "binary_sha256": "62dba542d4cdd23e460f38a38526e357e65c66509bbe15c6588fc24e681a5df4",
+  "function_id": "fn_0000000000091550",
+  "function_entry": 4789584,
+  "cases": [
+    {
+      "occurrence": {
+        "origin": {
+          "architecture": "AMD64",
+          "canonical_address": 4789619,
+          "decode_mode": "long64",
+          "function_owners": [
+            "fn_0000000000091550"
+          ],
+          "image_sha256": "62dba542d4cdd23e460f38a38526e357e65c66509bbe15c6588fc24e681a5df4",
+          "instruction_bytes": "48f7ff",
+          "instruction_identity": "idiv rdi",
+          "kind": "decoded_instruction"
+        },
+        "static_occurrence_id": 13
+      },
+      "edge_id": {
+        "outcome_id": 1,
+        "static_occurrence_id": 13
+      },
+      "rdx_update": {
+        "args": [
+          {
+            "args": [
+              {
+                "args": [
+                  {
+                    "name": "rdx",
+                    "op": "var",
+                    "sort": {
+                      "kind": "bv",
+                      "width": 64
+                    }
+                  },
+                  {
+                    "name": "rax",
+                    "op": "var",
+                    "sort": {
+                      "kind": "bv",
+                      "width": 64
+                    }
+                  }
+                ],
+                "op": "concat",
+                "sort": {
+                  "kind": "bv",
+                  "width": 128
+                }
+              },
+              {
+                "amount": 64,
+                "args": [
+                  {
+                    "name": "rdi",
+                    "op": "var",
+                    "sort": {
+                      "kind": "bv",
+                      "width": 64
+                    }
+                  }
+                ],
+                "op": "sign_extend",
+                "sort": {
+                  "kind": "bv",
+                  "width": 128
+                }
+              }
+            ],
+            "op": "bv_srem",
+            "sort": {
+              "kind": "bv",
+              "width": 128
+            }
+          }
+        ],
+        "hi": 63,
+        "lo": 0,
+        "op": "extract",
+        "sort": {
+          "kind": "bv",
+          "width": 64
+        }
+      }
+    },
+    {
+      "occurrence": {
+        "origin": {
+          "architecture": "AMD64",
+          "canonical_address": 4789735,
+          "decode_mode": "long64",
+          "function_owners": [
+            "fn_0000000000091550"
+          ],
+          "image_sha256": "62dba542d4cdd23e460f38a38526e357e65c66509bbe15c6588fc24e681a5df4",
+          "instruction_bytes": "48f77da8",
+          "instruction_identity": "idiv qword ptr [rbp - 0x58]",
+          "kind": "decoded_instruction"
+        },
+        "static_occurrence_id": 47
+      },
+      "edge_id": {
+        "outcome_id": 1,
+        "static_occurrence_id": 47
+      },
+      "rdx_update": {
+        "args": [
+          {
+            "args": [
+              {
+                "args": [
+                  {
+                    "name": "rdx",
+                    "op": "var",
+                    "sort": {
+                      "kind": "bv",
+                      "width": 64
+                    }
+                  },
+                  {
+                    "name": "rax",
+                    "op": "var",
+                    "sort": {
+                      "kind": "bv",
+                      "width": 64
+                    }
+                  }
+                ],
+                "op": "concat",
+                "sort": {
+                  "kind": "bv",
+                  "width": 128
+                }
+              },
+              {
+                "amount": 64,
+                "args": [
+                  {
+                    "args": [
+                      {
+                        "args": [
+                          {
+                            "args": [
+                              {
+                                "args": [
+                                  {
+                                    "args": [
+                                      {
+                                        "args": [
+                                          {
+                                            "args": [
+                                              {
+                                                "args": [
+                                                  {
+                                                    "name": "mem",
+                                                    "op": "var",
+                                                    "sort": {
+                                                      "index_width": 64,
+                                                      "kind": "array",
+                                                      "value_width": 8
+                                                    }
+                                                  },
+                                                  {
+                                                    "args": [
+                                                      {
+                                                        "args": [
+                                                          {
+                                                            "name": "rbp",
+                                                            "op": "var",
+                                                            "sort": {
+                                                              "kind": "bv",
+                                                              "width": 64
+                                                            }
+                                                          },
+                                                          {
+                                                            "op": "bv_lit",
+                                                            "sort": {
+                                                              "kind": "bv",
+                                                              "width": 64
+                                                            },
+                                                            "value": 18446744073709551528
+                                                          }
+                                                        ],
+                                                        "op": "bv_add",
+                                                        "sort": {
+                                                          "kind": "bv",
+                                                          "width": 64
+                                                        }
+                                                      },
+                                                      {
+                                                        "op": "bv_lit",
+                                                        "sort": {
+                                                          "kind": "bv",
+                                                          "width": 64
+                                                        },
+                                                        "value": 7
+                                                      }
+                                                    ],
+                                                    "op": "bv_add",
+                                                    "sort": {
+                                                      "kind": "bv",
+                                                      "width": 64
+                                                    }
+                                                  }
+                                                ],
+                                                "op": "select",
+                                                "sort": {
+                                                  "kind": "bv",
+                                                  "width": 8
+                                                }
+                                              },
+                                              {
+                                                "args": [
+                                                  {
+                                                    "name": "mem",
+                                                    "op": "var",
+                                                    "sort": {
+                                                      "index_width": 64,
+                                                      "kind": "array",
+                                                      "value_width": 8
+                                                    }
+                                                  },
+                                                  {
+                                                    "args": [
+                                                      {
+                                                        "args": [
+                                                          {
+                                                            "name": "rbp",
+                                                            "op": "var",
+                                                            "sort": {
+                                                              "kind": "bv",
+                                                              "width": 64
+                                                            }
+                                                          },
+                                                          {
+                                                            "op": "bv_lit",
+                                                            "sort": {
+                                                              "kind": "bv",
+                                                              "width": 64
+                                                            },
+                                                            "value": 18446744073709551528
+                                                          }
+                                                        ],
+                                                        "op": "bv_add",
+                                                        "sort": {
+                                                          "kind": "bv",
+                                                          "width": 64
+                                                        }
+                                                      },
+                                                      {
+                                                        "op": "bv_lit",
+                                                        "sort": {
+                                                          "kind": "bv",
+                                                          "width": 64
+                                                        },
+                                                        "value": 6
+                                                      }
+                                                    ],
+                                                    "op": "bv_add",
+                                                    "sort": {
+                                                      "kind": "bv",
+                                                      "width": 64
+                                                    }
+                                                  }
+                                                ],
+                                                "op": "select",
+                                                "sort": {
+                                                  "kind": "bv",
+                                                  "width": 8
+                                                }
+                                              }
+                                            ],
+                                            "op": "concat",
+                                            "sort": {
+                                              "kind": "bv",
+                                              "width": 16
+                                            }
+                                          },
+                                          {
+                                            "args": [
+                                              {
+                                                "name": "mem",
+                                                "op": "var",
+                                                "sort": {
+                                                  "index_width": 64,
+                                                  "kind": "array",
+                                                  "value_width": 8
+                                                }
+                                              },
+                                              {
+                                                "args": [
+                                                  {
+                                                    "args": [
+                                                      {
+                                                        "name": "rbp",
+                                                        "op": "var",
+                                                        "sort": {
+                                                          "kind": "bv",
+                                                          "width": 64
+                                                        }
+                                                      },
+                                                      {
+                                                        "op": "bv_lit",
+                                                        "sort": {
+                                                          "kind": "bv",
+                                                          "width": 64
+                                                        },
+                                                        "value": 18446744073709551528
+                                                      }
+                                                    ],
+                                                    "op": "bv_add",
+                                                    "sort": {
+                                                      "kind": "bv",
+                                                      "width": 64
+                                                    }
+                                                  },
+                                                  {
+                                                    "op": "bv_lit",
+                                                    "sort": {
+                                                      "kind": "bv",
+                                                      "width": 64
+                                                    },
+                                                    "value": 5
+                                                  }
+                                                ],
+                                                "op": "bv_add",
+                                                "sort": {
+                                                  "kind": "bv",
+                                                  "width": 64
+                                                }
+                                              }
+                                            ],
+                                            "op": "select",
+                                            "sort": {
+                                              "kind": "bv",
+                                              "width": 8
+                                            }
+                                          }
+                                        ],
+                                        "op": "concat",
+                                        "sort": {
+                                          "kind": "bv",
+                                          "width": 24
+                                        }
+                                      },
+                                      {
+                                        "args": [
+                                          {
+                                            "name": "mem",
+                                            "op": "var",
+                                            "sort": {
+                                              "index_width": 64,
+                                              "kind": "array",
+                                              "value_width": 8
+                                            }
+                                          },
+                                          {
+                                            "args": [
+                                              {
+                                                "args": [
+                                                  {
+                                                    "name": "rbp",
+                                                    "op": "var",
+                                                    "sort": {
+                                                      "kind": "bv",
+                                                      "width": 64
+                                                    }
+                                                  },
+                                                  {
+                                                    "op": "bv_lit",
+                                                    "sort": {
+                                                      "kind": "bv",
+                                                      "width": 64
+                                                    },
+                                                    "value": 18446744073709551528
+                                                  }
+                                                ],
+                                                "op": "bv_add",
+                                                "sort": {
+                                                  "kind": "bv",
+                                                  "width": 64
+                                                }
+                                              },
+                                              {
+                                                "op": "bv_lit",
+                                                "sort": {
+                                                  "kind": "bv",
+                                                  "width": 64
+                                                },
+                                                "value": 4
+                                              }
+                                            ],
+                                            "op": "bv_add",
+                                            "sort": {
+                                              "kind": "bv",
+                                              "width": 64
+                                            }
+                                          }
+                                        ],
+                                        "op": "select",
+                                        "sort": {
+                                          "kind": "bv",
+                                          "width": 8
+                                        }
+                                      }
+                                    ],
+                                    "op": "concat",
+                                    "sort": {
+                                      "kind": "bv",
+                                      "width": 32
+                                    }
+                                  },
+                                  {
+                                    "args": [
+                                      {
+                                        "name": "mem",
+                                        "op": "var",
+                                        "sort": {
+                                          "index_width": 64,
+                                          "kind": "array",
+                                          "value_width": 8
+                                        }
+                                      },
+                                      {
+                                        "args": [
+                                          {
+                                            "args": [
+                                              {
+                                                "name": "rbp",
+                                                "op": "var",
+                                                "sort": {
+                                                  "kind": "bv",
+                                                  "width": 64
+                                                }
+                                              },
+                                              {
+                                                "op": "bv_lit",
+                                                "sort": {
+                                                  "kind": "bv",
+                                                  "width": 64
+                                                },
+                                                "value": 18446744073709551528
+                                              }
+                                            ],
+                                            "op": "bv_add",
+                                            "sort": {
+                                              "kind": "bv",
+                                              "width": 64
+                                            }
+                                          },
+                                          {
+                                            "op": "bv_lit",
+                                            "sort": {
+                                              "kind": "bv",
+                                              "width": 64
+                                            },
+                                            "value": 3
+                                          }
+                                        ],
+                                        "op": "bv_add",
+                                        "sort": {
+                                          "kind": "bv",
+                                          "width": 64
+                                        }
+                                      }
+                                    ],
+                                    "op": "select",
+                                    "sort": {
+                                      "kind": "bv",
+                                      "width": 8
+                                    }
+                                  }
+                                ],
+                                "op": "concat",
+                                "sort": {
+                                  "kind": "bv",
+                                  "width": 40
+                                }
+                              },
+                              {
+                                "args": [
+                                  {
+                                    "name": "mem",
+                                    "op": "var",
+                                    "sort": {
+                                      "index_width": 64,
+                                      "kind": "array",
+                                      "value_width": 8
+                                    }
+                                  },
+                                  {
+                                    "args": [
+                                      {
+                                        "args": [
+                                          {
+                                            "name": "rbp",
+                                            "op": "var",
+                                            "sort": {
+                                              "kind": "bv",
+                                              "width": 64
+                                            }
+                                          },
+                                          {
+                                            "op": "bv_lit",
+                                            "sort": {
+                                              "kind": "bv",
+                                              "width": 64
+                                            },
+                                            "value": 18446744073709551528
+                                          }
+                                        ],
+                                        "op": "bv_add",
+                                        "sort": {
+                                          "kind": "bv",
+                                          "width": 64
+                                        }
+                                      },
+                                      {
+                                        "op": "bv_lit",
+                                        "sort": {
+                                          "kind": "bv",
+                                          "width": 64
+                                        },
+                                        "value": 2
+                                      }
+                                    ],
+                                    "op": "bv_add",
+                                    "sort": {
+                                      "kind": "bv",
+                                      "width": 64
+                                    }
+                                  }
+                                ],
+                                "op": "select",
+                                "sort": {
+                                  "kind": "bv",
+                                  "width": 8
+                                }
+                              }
+                            ],
+                            "op": "concat",
+                            "sort": {
+                              "kind": "bv",
+                              "width": 48
+                            }
+                          },
+                          {
+                            "args": [
+                              {
+                                "name": "mem",
+                                "op": "var",
+                                "sort": {
+                                  "index_width": 64,
+                                  "kind": "array",
+                                  "value_width": 8
+                                }
+                              },
+                              {
+                                "args": [
+                                  {
+                                    "args": [
+                                      {
+                                        "name": "rbp",
+                                        "op": "var",
+                                        "sort": {
+                                          "kind": "bv",
+                                          "width": 64
+                                        }
+                                      },
+                                      {
+                                        "op": "bv_lit",
+                                        "sort": {
+                                          "kind": "bv",
+                                          "width": 64
+                                        },
+                                        "value": 18446744073709551528
+                                      }
+                                    ],
+                                    "op": "bv_add",
+                                    "sort": {
+                                      "kind": "bv",
+                                      "width": 64
+                                    }
+                                  },
+                                  {
+                                    "op": "bv_lit",
+                                    "sort": {
+                                      "kind": "bv",
+                                      "width": 64
+                                    },
+                                    "value": 1
+                                  }
+                                ],
+                                "op": "bv_add",
+                                "sort": {
+                                  "kind": "bv",
+                                  "width": 64
+                                }
+                              }
+                            ],
+                            "op": "select",
+                            "sort": {
+                              "kind": "bv",
+                              "width": 8
+                            }
+                          }
+                        ],
+                        "op": "concat",
+                        "sort": {
+                          "kind": "bv",
+                          "width": 56
+                        }
+                      },
+                      {
+                        "args": [
+                          {
+                            "name": "mem",
+                            "op": "var",
+                            "sort": {
+                              "index_width": 64,
+                              "kind": "array",
+                              "value_width": 8
+                            }
+                          },
+                          {
+                            "args": [
+                              {
+                                "args": [
+                                  {
+                                    "name": "rbp",
+                                    "op": "var",
+                                    "sort": {
+                                      "kind": "bv",
+                                      "width": 64
+                                    }
+                                  },
+                                  {
+                                    "op": "bv_lit",
+                                    "sort": {
+                                      "kind": "bv",
+                                      "width": 64
+                                    },
+                                    "value": 18446744073709551528
+                                  }
+                                ],
+                                "op": "bv_add",
+                                "sort": {
+                                  "kind": "bv",
+                                  "width": 64
+                                }
+                              },
+                              {
+                                "op": "bv_lit",
+                                "sort": {
+                                  "kind": "bv",
+                                  "width": 64
+                                },
+                                "value": 0
+                              }
+                            ],
+                            "op": "bv_add",
+                            "sort": {
+                              "kind": "bv",
+                              "width": 64
+                            }
+                          }
+                        ],
+                        "op": "select",
+                        "sort": {
+                          "kind": "bv",
+                          "width": 8
+                        }
+                      }
+                    ],
+                    "op": "concat",
+                    "sort": {
+                      "kind": "bv",
+                      "width": 64
+                    }
+                  }
+                ],
+                "op": "sign_extend",
+                "sort": {
+                  "kind": "bv",
+                  "width": 128
+                }
+              }
+            ],
+            "op": "bv_srem",
+            "sort": {
+              "kind": "bv",
+              "width": 128
+            }
+          }
+        ],
+        "hi": 63,
+        "lo": 0,
+        "op": "extract",
+        "sort": {
+          "kind": "bv",
+          "width": 64
+        }
+      }
+    }
+  ]
+}
