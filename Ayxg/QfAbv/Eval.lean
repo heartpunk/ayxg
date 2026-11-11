@@ -121,6 +121,14 @@ def evalBindings : {Γ Γ' : Ctx} → Env Γ → Bindings Γ Γ' → Env Γ'
 
 end
 
+/-- The `bvsgt lhs rhs` rewrite denotes signed greater-than on the evaluated
+operands, including at every bit-vector width. -/
+@[simp] theorem eval_bvSgt {Γ : Ctx} (env : Env Γ) (w : Nat)
+    (lhs rhs : Expr Γ (.bv w)) :
+    eval env (Expr.bvSgt w lhs rhs) =
+      decide ((eval env rhs).toInt < (eval env lhs).toInt) := by
+  rfl
+
 @[simp] def evalBool {Γ : Ctx} (env : Env Γ) (e : Expr Γ .bool) : Bool :=
   eval env e
 
