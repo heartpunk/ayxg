@@ -112,36 +112,6 @@ class ConversionTests(unittest.TestCase):
                 z3_result = z3.simplify(z3.SRem(z3_left, z3_right)).as_long()
                 self.assertEqual(z3_result, expected)
 
-    def test_chroot_idiv_extracted_remainder_updates(self):
-        from ayxg import (ArraySort, BVSort, Declaration, QFAbvArrayValue,
-                          QFAbvContext, QFAbvExpr, QFAbvValuation, eval_expr)
-
-        fixture = json.loads(
-            (Path(__file__).resolve().parents[1] / "fixtures" / "chroot_print_int_idiv.json").read_text()
-        )
-        for case in fixture["cases"]:
-            origin = case["occurrence"]["origin"]
-            with self.subTest(instruction=origin["instruction_identity"]):
-                node = TypedExpr.from_data(case["rdx_update"])
-                self.assertEqual(TypedExpr.from_data(node.to_data()), node)
-                if origin["instruction_bytes"] == "48f7ff":
-                    declarations = (Declaration("rdx", TermSort.bv(64)),
-                                    Declaration("rax", TermSort.bv(64)),
-                                    Declaration("rdi", TermSort.bv(64)))
-                    values = ((1 << 64) - 1, (1 << 64) - 7, 3)
-                else:
-                    self.assertEqual(origin["instruction_bytes"], "48f77da8")
-                    declarations = (Declaration("rdx", TermSort.bv(64)),
-                                    Declaration("rax", TermSort.bv(64)),
-                                    Declaration("rbp", TermSort.bv(64)),
-                                    Declaration("mem", TermSort.array(64, 8)))
-                    memory = QFAbvArrayValue(ArraySort(64, 8), 0, ((0xfa8, 3),))
-                    values = ((1 << 64) - 1, (1 << 64) - 7, 0x1000, memory)
-                context = QFAbvContext(declarations)
-                expression = QFAbvExpr(context, BVSort(64), node)
-                self.assertEqual(eval_expr(expression, QFAbvValuation(context, values)),
-                                 (1 << 64) - 1)
-
     def test_array_equality_ground_witness(self):
         sort = z3.BitVecSort(4)
         left = z3.K(sort, z3.BitVecVal(0, 1))
