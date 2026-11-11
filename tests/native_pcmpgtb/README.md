@@ -16,7 +16,8 @@ and concrete XMM operand values coincide. This is an instruction-level
 comparison, not execution of the extraction ELF as a process. Other machine
 state is not compared. An unexpected fault or observer failure fails the test.
 
-Each encoding receives 12 seeded cases by default. Each pair samples signed-boundary values and arbitrary byte lanes.
+Each encoding receives 12 seeded cases by default. Every pair includes fixed
+signed-boundary lanes and sampled boundary and arbitrary byte lanes.
 The result is a bounded nonfaulting check, not exhaustive verification or a
 fault-behavior test.
 
@@ -39,9 +40,10 @@ PYTHONPATH="$AYXG/python" python "$AYXG/tests/native_pcmpgtb/check.py" \
   --observer /tmp/ayxg-pcmpgtb-build/observer-bridge \
   --observer-fixtures "$WRUH/experiments/mov_observer/fixtures" \
   --wruh-root "$WRUH" --wruh-fresh "$WRUH/.lake/build/bin/wruh-fresh" \
-  --examples 12 --seed 270933
+  --artifacts /tmp/ayxg-pcmpgtb-results --examples 12 --seed 270933
 ```
 
-The run requires the shared observer and `wruh-fresh`; it is not wired into
-AYXG's ordinary CI targets. A mismatch reports the seed, both input vectors,
-the model result, and the observed result.
+The artifact directory must not exist. It retains the extracted ELFs, emitted
+models, and per-case inputs and observed/model bytes. A mismatch reports the
+seed, both inputs, and both results. This check requires the shared observer and
+`wruh-fresh`; it is not wired into AYXG's ordinary CI targets.

@@ -1,6 +1,8 @@
 """Bounded fresh-WRUH-extraction versus shared native observer comparison."""
 import argparse
 import json
+import hashlib
+import shutil
 import os
 import random
 import subprocess
@@ -47,25 +49,30 @@ def main():
     parser.add_argument('--observer-fixtures', type=Path, required=True)
     parser.add_argument('--wruh-root', type=Path, required=True)
     parser.add_argument('--wruh-fresh', type=Path, required=True)
+    parser.add_argument('--artifacts', type=Path, required=True)
     parser.add_argument('--examples', type=int, default=12)
     parser.add_argument('--seed', type=int, default=270933)
     args = parser.parse_args()
     if args.examples < 1:
         parser.error('--examples must be positive')
+    args.artifacts.mkdir(parents=True, exist_ok=False)
+    observations = []
     rng = random.Random(args.seed)
     boundary = [0, 1, 0x7e, 0x7f, 0x80, 0x81, 0xfe, 0xff]
     cases = [(933, 'zmm0', 'zmm6', 0, 6), (934, 'zmm1', 'zmm0', 1, 0)]
     for occurrence, dest, src, dest_index, src_index in cases:
         with tempfile.TemporaryDirectory(prefix='ayxg-pcmpgtb-extract-') as extraction:
             function, edge = extract_model(Path(extraction), occurrence, args.wruh_root.resolve(), args.wruh_fresh.resolve())
+            for name in ('stub.elf', 'model.json'):
+                shutil.copyfile(Path(extraction) / name, args.artifacts / f'{occurrence}-{name}')
             declarations = tuple(Declaration.from_data(d) for d in function['declarations'])
             ctx = QFAbvContext(declarations)
             update = next(v['value'] for v in edge['summary']['simultaneous_update'] if v['name'] == dest)
             expr = QFAbvExpr(ctx, BVSort(512), update)
             guard = QFAbvExpr(ctx, BoolSort(), edge['summary']['guard'])
             for index in range(args.examples):
-                left = bytes(rng.choice(boundary) if i < 8 else rng.randrange(256) for i in range(16))
-                right = bytes(rng.choice(boundary) if i < 8 else rng.randrange(256) for i in range(16))
+                left = bytes([0x80, 0x7f, 0, 0xff] + [rng.choice(boundary) for _ in range(4)] + [rng.randrange(256) for _ in range(8)])
+                right = bytes([0x7f, 0x80, 0xff, 0] + [rng.choice(boundary) for _ in range(4)] + [rng.randrange(256) for _ in range(8)])
                 values = []
                 for declaration in declarations:
                     sort = declaration.sort
@@ -97,10 +104,17 @@ def main():
                            '/work/output', str(dest_index), str(src_index)]
                     subprocess.run(cmd, check=True, timeout=15)
                     actual = (work / 'output').read_bytes()
+                observations.append({'occurrence': occurrence, 'case': index, 'left': left.hex(),
+                                     'right': right.hex(), 'model': model.hex(), 'native': actual.hex()})
                 if actual != model:
                     raise AssertionError(f'occurrence={occurrence} case={index} seed={args.seed} '
                                          f'left={left.hex()} right={right.hex()} model={model.hex()} native={actual.hex()}')
-        print(f'PASS occurrence={occurrence} cases={args.examples} seed={args.seed}', flush=True)
+        print(f'PASS occurrence={occurrence} cases={args.examples} seed={args.seed} '
+              f'first={observations[-args.examples]}', flush=True)
+    (args.artifacts / 'observations.json').write_text(json.dumps(
+        {'seed': args.seed, 'examples_per_occurrence': args.examples, 'observations': observations}, indent=2) + '\n')
+    for path in sorted(args.artifacts.iterdir()):
+        print(f'SHA256 {hashlib.sha256(path.read_bytes()).hexdigest()} {path.name}', flush=True)
 
 
 if __name__ == '__main__':
