@@ -53,6 +53,7 @@ jobs:
             PYTHONPATH=python python -m pytest -p no:cacheprovider -q tests/unit
             lake exe cache get
             lake build Ayxg
+            PYTHONPATH=python python tests/tools/bvsrem_cross_language_pbt.py
             lake env lean tests/lean/FPAxiomRegression.lean
             lake env lean tests/lean/BvSDivRegression.lean
             lake env lean tests/lean/BvSRemRegression.lean
