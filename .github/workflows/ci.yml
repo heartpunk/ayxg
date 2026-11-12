@@ -57,6 +57,7 @@ jobs:
             lake env lean tests/lean/FPAxiomRegression.lean
             lake env lean tests/lean/BvSDivRegression.lean
             lake env lean tests/lean/BvSRemRegression.lean
+            lake env lean tests/lean/BvSGtRegression.lean
             bazel build //...
             bazel test //... --test_output=errors
           '

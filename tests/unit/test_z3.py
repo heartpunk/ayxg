@@ -16,6 +16,29 @@ from ayxg.z3 import (expr_from_z3, expr_to_z3, sort_from_z3, sort_to_z3,
                      declaration_variables, typed_conversion_cache)
 
 class ConversionTests(unittest.TestCase):
+    @staticmethod
+    def _bvsgt_cases():
+        path = Path(os.environ.get(
+            "AYXG_BVSGT_CASES_RLOCATION",
+            str(Path(__file__).resolve().parents[1] / "fixtures" / "bvsgt_cases.json"),
+        ))
+        if not path.is_file():
+            from python.runfiles import runfiles
+            resolved = runfiles.Create().Rlocation(str(path))
+            if resolved is None:
+                raise AssertionError("declared bvsgt shared cases are missing")
+            path = Path(resolved)
+        with path.open(encoding="utf-8") as source:
+            fixture = json.load(source)
+        if fixture.get("encoding") != "ayxg-bvsgt-cases-v1":
+            raise AssertionError("unknown bvsgt shared-case encoding")
+        if fixture.get("resultDatatype") != "boolean":
+            raise AssertionError("bvsgt shared-case result datatype must be boolean")
+        cases = fixture["cases"]
+        if not cases:
+            raise AssertionError("bvsgt shared cases must not be empty")
+        return cases
+
     def test_operation_roundtrips(self):
         ctx = z3.Context()
         x, y = z3.BitVecs("x y", 8, ctx=ctx)
@@ -48,6 +71,43 @@ class ConversionTests(unittest.TestCase):
         solver = z3.Solver(ctx=ctx)
         solver.add(term != rebuilt)
         self.assertEqual(solver.check(), z3.unsat)
+
+    def test_signed_greater_than_imports_as_reversed_signed_less_than(self):
+        from ayxg import BoolSort, Declaration, QFAbvContext, QFAbvExpr, QFAbvValuation, eval_expr
+
+        cases = self._bvsgt_cases()
+        for width in sorted({case["width"] for case in cases}):
+            with self.subTest(width=width):
+                ctx = z3.Context()
+                x, y = z3.BitVecs("x y", width, ctx=ctx)
+                source = x > y
+                typed = expr_from_z3(source)
+                self.assertEqual(typed.op, "bv_slt")
+                self.assertEqual((typed.args[0].name, typed.args[1].name), ("y", "x"))
+                rebuilt = expr_to_z3(typed, {"x": x, "y": y}, ctx)
+                solver = z3.Solver(ctx=ctx)
+                solver.add(source != rebuilt)
+                self.assertEqual(solver.check(), z3.unsat)
+
+                typed = TypedExpr.from_data(typed.to_data())
+                context = QFAbvContext((
+                    Declaration("x", TermSort.bv(width)),
+                    Declaration("y", TermSort.bv(width)),
+                ))
+                expression = QFAbvExpr(context, BoolSort(), typed)
+                selected = [case for case in cases if case["width"] == width]
+                for case in selected:
+                    left, right = case["lhs"], case["rhs"]
+                    with self.subTest(width=width, left=left, right=right):
+                        oracle = z3.simplify(z3.substitute(
+                            source,
+                            (x, z3.BitVecVal(left, width, ctx=ctx)),
+                            (y, z3.BitVecVal(right, width, ctx=ctx)),
+                        ))
+                        expected = case["result"]
+                        self.assertEqual(z3.is_true(oracle), expected)
+                        actual = eval_expr(expression, QFAbvValuation(context, (left, right)))
+                        self.assertEqual(actual, expected)
 
     def test_signed_division_evaluator_matches_z3(self):
         from ayxg import BVSort, Declaration, QFAbvContext, QFAbvExpr, QFAbvValuation, eval_expr

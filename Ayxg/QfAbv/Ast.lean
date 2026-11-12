@@ -119,6 +119,11 @@ inductive Bindings : Ctx → Ctx → Type where
 
 end
 
+/-- Signed greater-than is represented by signed less-than with reversed operands,
+matching the Z3 `bvsgt` import rewrite. -/
+def Expr.bvSgt {Γ : Ctx} (w : Nat) (lhs rhs : Expr Γ (.bv w)) : Expr Γ .bool :=
+  .bvSlt w rhs lhs
+
 /-- Existential wrapper for expressions whose sort is not statically known to callers. -/
 inductive TypedExpr (Γ : Ctx) where
   | mk (s : TermSort) (expr : Expr Γ s) : TypedExpr Γ
