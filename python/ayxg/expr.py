@@ -227,6 +227,7 @@ _BINARY_BV_OPS = {
     "bv_udiv",
     "bv_sdiv",
     "bv_urem",
+    "bv_srem",
     "bv_and",
     "bv_or",
     "bv_xor",

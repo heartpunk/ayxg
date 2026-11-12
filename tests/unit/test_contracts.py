@@ -81,7 +81,7 @@ class TestSortAndExpressionContracts:
             TypedExpr.equal(x, y), TypedExpr.equal(p, TypedExpr.bool_lit(False)),
             TypedExpr.unary("bv_not", x),
             *(TypedExpr.binary(op, x, y) for op in [
-                "bv_add", "bv_sub", "bv_mul", "bv_udiv", "bv_sdiv", "bv_urem", "bv_and",
+                "bv_add", "bv_sub", "bv_mul", "bv_udiv", "bv_sdiv", "bv_urem", "bv_srem", "bv_and",
                 "bv_or", "bv_xor", "bv_shl", "bv_lshr", "bv_ashr",
                 "bv_ult", "bv_ule", "bv_slt", "bv_sle"]),
             TypedExpr.sign_extend(x, 2), TypedExpr("zero_extend", TermSort.bv(6), (x,), amount=2),
@@ -97,11 +97,11 @@ class TestSortAndExpressionContracts:
         state = QFAbvValuation(context, values)
         expected = [
             True, True, 3, QFAbvArrayValue(ArraySort(2, 4), 3), False, False,
-            True, state.values[4], False, False, 10, 12, 14, 3, 0, 0, 5, 5, 7,
+            True, state.values[4], False, False, 10, 12, 14, 3, 0, 0, 5, 5, 5, 7,
             2, 0, 0, 0, True, True, True, True, 5, 5, 61, 2, 0x55, 0, 3,
             QFAbvArrayValue(ArraySort(2, 4), 0, ((1, 3), (2, 3))),
         ]
-        assert len(expressions) == 35
+        assert len(expressions) == 36
         for node, result in zip(expressions, expected, strict=True):
             assert TypedExpr.from_data(node.to_data()) == node
             before = eval_expr(expr(context, node), state)

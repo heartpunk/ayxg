@@ -26,7 +26,7 @@ py_test(
     srcs = ["tests/unit/test_z3.py"],
     main = "tests/unit/test_z3.py",
     deps = [":z3", "@rules_python//python/runfiles"],
-    data = select({"@platforms//os:linux": ["@ayxg_native//:libstdc++.so.6"], "//conditions:default": []}),
+    data = ["tests/fixtures/bvsrem.json"] + select({"@platforms//os:linux": ["@ayxg_native//:libstdc++.so.6"], "//conditions:default": []}),
     env = select({"@platforms//os:linux": {"AYXG_LIBSTDCXX_RLOCATION": "$(rlocationpath @ayxg_native//:libstdc++.so.6)"}, "//conditions:default": {}}),
 )
 

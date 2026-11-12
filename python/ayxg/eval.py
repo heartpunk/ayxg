@@ -137,6 +137,14 @@ def _apply(node: TypedExpr, args: tuple[Value, ...], variables: Mapping[str, Val
         return signed_quotient & mask
     if op == "bv_urem":
         return left if right == 0 else left % right
+    if op == "bv_srem":
+        signed_left, signed_right = _signed(left, width), _signed(right, width)
+        if signed_right == 0:
+            return left
+        # SMT-LIB QF_BV gives bvsrem the dividend's sign; bvsmod instead
+        # follows the divisor's sign: https://smt-lib.org/logics-all.shtml.
+        remainder = abs(signed_left) % abs(signed_right)
+        return (-remainder if signed_left < 0 else remainder) & mask
     if op == "bv_and":
         return left & right
     if op == "bv_or":
