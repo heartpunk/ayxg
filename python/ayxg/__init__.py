@@ -8,7 +8,8 @@ from .qfabv import (
 )
 from .fp import FPValue, RoundingMode, FPInterpretation, UnderspecifiedFPKey, UnderspecifiedFPError
 from .expr import Declaration, TermSort, TypedExpr
-from .eval import QFAbvSemantics, equal_valuations, eval_expr, eval_exprs, eval_step, eval_update
+from .eval import (QFAbvAdapterSemantics, QFAbvSemantics, equal_valuations,
+                   eval_adapter, eval_expr, eval_exprs, eval_step, eval_update)
 
 __all__ = [
     "FPInterpretation", "UnderspecifiedFPKey", "UnderspecifiedFPError",
@@ -18,5 +19,6 @@ __all__ = [
     "QFAbvExpr", "QFAbvSegment", "QFAbvSTS", "QFAbvStep", "QFAbvUpdate",
     "QFAbvValuation", "RelationSemantics", "Segment", "SegmentDAG", "SegmentNode",
     "Sort", "STS", "TermSort", "TypedExpr", "Value",
-    "QFAbvSemantics", "equal_valuations", "eval_expr", "eval_exprs", "eval_step", "eval_update",
+    "QFAbvAdapterSemantics", "QFAbvSemantics", "equal_valuations", "eval_adapter",
+    "eval_expr", "eval_exprs", "eval_step", "eval_update",
 ]

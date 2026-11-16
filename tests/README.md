@@ -50,9 +50,9 @@ PYTHONDONTWRITEBYTECODE=1 PYTHONPATH=python:/tmp/ayxg-differential/leanpy \
   --artifacts /tmp/ayxg-transition-results
 ```
 
-The bridge elaborates heterogeneous typed updates and steps, then calls actual
-Lean `StateUpdate.eval`, `StateUpdate.compose`, `QFAbvStep.compose`, and identity
-constructors. Step execution uses the defining guard and update semantics.
+The bridge elaborates heterogeneous typed updates and adapters, then calls actual
+Lean `StateUpdate.eval`, `StateUpdate.compose`, `QFAbvAdapter.compose`, and identity
+constructors. Adapter execution uses the defining guard and update semantics.
 Every request compares ten results with Python, including composed and sequential
 updates/steps and left/right identity composition. Arrays are compared by their
 entire bounded index domain, not finite-support representation equality.

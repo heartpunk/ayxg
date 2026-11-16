@@ -37,7 +37,7 @@ theorem symbolicStepHitsRegion_iff {Γinput Γ : Ctx}
     (system : SymbolicTransitionSystem Unit Γ (SymbolicTransition Unit Γ))
     (canonical : system.edgeSemantics = SymbolicTransition.edgeSemantics)
     (observables : Region.Observables Unit Γ)
-    (input : QFAbvStep Γinput Γ) (ρ : Env Γinput)
+    (input : QFAbvAdapter Γinput Γ) (ρ : Env Γinput)
     (target : Region Unit Γ) :
     (∃ successor ∈ system.symbolicStep input,
       ∃ (edge : SymbolicTransition Unit Γ) (result : Env Γ),

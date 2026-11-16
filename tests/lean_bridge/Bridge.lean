@@ -53,7 +53,7 @@ def parseUpdate (Γ : Ctx) : (Δ : Ctx) → List Json → Except String (StateUp
     pure (.cons (← asSort d.sort (← parseExpr Γ e)) (← parseUpdate Γ ds es))
   | _, _ => throw "update length mismatch"
 
-def parseStep (Γ Δ : Ctx) (j : Json) : Except String (QFAbvStep Γ Δ) := do
+def parseStep (Γ Δ : Ctx) (j : Json) : Except String (QFAbvAdapter Γ Δ) := do
   return ⟨← asSort .bool (← parseExpr Γ (← field j "guard")),
     ← parseUpdate Γ Δ (← (← field j "rhs").getArr?).toList⟩
 
@@ -62,7 +62,7 @@ def envResult : {Γ : Ctx} → Env Γ → Except String (List Json)
   | d :: _, .cons head tail => do
     return (← result d.sort head) :: (← envResult tail)
 
-def runStep {Γ Δ : Ctx} (step : QFAbvStep Γ Δ) (env : Env Γ) : Except String Json := do
+def runStep {Γ Δ : Ctx} (step : QFAbvAdapter Γ Δ) (env : Env Γ) : Except String Json := do
   if Eval.evalBool env step.guard then
     return toJson (← envResult (step.update.eval env))
   else return Json.null
@@ -81,12 +81,12 @@ def transitionRequest (j : Json) : Except String Json := do
     ("update_composed", toJson (← envResult ((left.update.compose right.update).eval env))),
     ("update_sequential", toJson (← envResult (right.update.eval (left.update.eval env)))),
     ("step", ← runStep left env),
-    ("composed", ← runStep (left.compose right) env),
+    ("composed", ← runStep (QFAbvAdapter.compose left right) env),
     ("sequential", sequential),
     ("identity_update", toJson (← envResult ((StateUpdate.identity Γ).eval env))),
-    ("identity_step", ← runStep (QFAbvStep.identity Γ) env),
-    ("identity_left", ← runStep ((QFAbvStep.identity Γ).compose left) env),
-    ("identity_right", ← runStep (left.compose (QFAbvStep.identity Δ)) env)]
+    ("identity_step", ← runStep (QFAbvAdapter.identity Γ) env),
+    ("identity_left", ← runStep ((QFAbvAdapter.identity Γ).compose left) env),
+    ("identity_right", ← runStep (left.compose (QFAbvAdapter.identity Δ)) env)]
 
 def segmentOutputs {Γ Δ Ω : Ctx} (segment : QFAbvSegment Γ Δ Ω)
     (env : Env Γ) (fuel : Nat) : Except String (List Json) := do
@@ -109,7 +109,8 @@ def segmentRequest (j : Json) : Except String Json := do
   let Ω ← parseContext (← field j "output")
   let env ← parseEnv Γ (← (← field j "values").getArr?).toList
   let entry ← parseStep Γ Δ (← field j "entry")
-  let steps ← (← (← field j "steps").getArr?).toList.mapM (parseStep Δ Δ)
+  let stepsRaw ← (← (← field j "steps").getArr?).toList.mapM (parseStep Δ Δ)
+  let steps : List (QFAbvStep Δ) := stepsRaw.map fun s => ⟨s.guard, s.update⟩
   let exits ← (← (← field j "exits").getArr?).toList.mapM (parseStep Δ Ω)
   let segment : QFAbvSegment Γ Δ Ω := ⟨⟨entry⟩, ⟨steps⟩, exits.map (fun s => ⟨s⟩)⟩
   let fuel ← natField j "fuel"
