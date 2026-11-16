@@ -10,9 +10,9 @@ from pathlib import Path
 from hypothesis import given, settings, strategies as st
 from hypothesis.database import DirectoryBasedExampleDatabase
 
-from ayxg import (Declaration, QFAbvContext, QFAbvExpr, QFAbvStep,
+from ayxg import (Declaration, QFAbvAdapter, QFAbvContext, QFAbvExpr,
                   QFAbvUpdate, QFAbvValuation, TermSort, TypedExpr,
-                  eval_step, eval_update)
+                  eval_adapter, eval_update)
 from ayxg.qfabv import ArraySort, BoolSort, QFAbvArrayValue, decode_sort
 from differential_expr import BV_OPS, CMP_OPS, LeanOracle, normalized, numbers
 
@@ -48,8 +48,8 @@ def step_data(step):
 @dataclass
 class TransitionCase:
     state: QFAbvValuation
-    left: QFAbvStep
-    right: QFAbvStep
+    left: QFAbvAdapter
+    right: QFAbvAdapter
 
     def request(self):
         return {"mode": "transition",
@@ -60,20 +60,20 @@ class TransitionCase:
                 "left": step_data(self.left), "right": step_data(self.right)}
 
     def python_result(self):
-        first = eval_step(self.left, self.state)
-        sequential = None if first is None else eval_step(self.right, first)
-        identity = QFAbvStep.identity(self.state.context)
+        first = eval_adapter(self.left, self.state)
+        sequential = None if first is None else eval_adapter(self.right, first)
+        identity = QFAbvAdapter.identity(self.state.context)
         update_first = eval_update(self.left.update, self.state)
         return {"update": state_result(update_first),
                 "update_composed": state_result(eval_update(self.left.update.compose(self.right.update), self.state)),
                 "update_sequential": state_result(eval_update(self.right.update, update_first)),
                 "step": state_result(first),
-                "composed": state_result(eval_step(self.left.compose(self.right), self.state)),
+                "composed": state_result(eval_adapter(self.left.compose(self.right), self.state)),
                 "sequential": state_result(sequential),
                 "identity_update": state_result(eval_update(QFAbvUpdate.identity(self.state.context), self.state)),
-                "identity_step": state_result(eval_step(identity, self.state)),
-                "identity_left": state_result(eval_step(identity.compose(self.left), self.state)),
-                "identity_right": state_result(eval_step(self.left.compose(QFAbvStep.identity(self.left.update.target)), self.state))}
+                "identity_step": state_result(eval_adapter(identity, self.state)),
+                "identity_left": state_result(eval_adapter(identity.compose(self.left), self.state)),
+                "identity_right": state_result(eval_adapter(self.left.compose(QFAbvAdapter.identity(self.left.update.target)), self.state))}
 
 
 @st.composite
@@ -147,7 +147,7 @@ def transition_cases(draw, mode):
     def step(a,b, forced=None):
         guard = expression(a, TermSort.bool()) if forced is None else TypedExpr.bool_lit(forced)
         update = QFAbvUpdate(a,b,tuple(wrap(a,expression(a,d.sort)) for d in b.declarations))
-        return QFAbvStep(QFAbvExpr(a,BoolSort(),guard),update)
+        return QFAbvAdapter(QFAbvExpr(a,BoolSort(),guard),update)
     left_forced = False if mode == "disabled_left" else True if mode in {"enabled", "disabled_right"} else None
     right_forced = False if mode == "disabled_right" else True if mode == "enabled" else None
     return TransitionCase(state,step(source,middle,left_forced),step(middle,output,right_forced))
@@ -161,10 +161,10 @@ def explicit_cases():
         x,y = TypedExpr.var("x",bv),TypedExpr.var("y",bv)
         swap = QFAbvUpdate(ctx,ctx,(wrap(ctx,y),wrap(ctx,x)))
         state = QFAbvValuation(ctx,(0,1))
-        left = QFAbvStep(wrap(ctx,TypedExpr.bool_lit(True)),swap)
+        left = QFAbvAdapter(wrap(ctx,TypedExpr.bool_lit(True)),swap)
         for expected in [0,1]:
             guard = TypedExpr.equal(x,TypedExpr.bv_lit(width,expected))
-            right = QFAbvStep(wrap(ctx,guard),QFAbvUpdate.identity(ctx))
+            right = QFAbvAdapter(wrap(ctx,guard),QFAbvUpdate.identity(ctx))
             yield TransitionCase(state,left,right), {"update": [normalized(1),normalized(0)],
                 "composed": [normalized(1),normalized(0)] if expected == 1 else None}
     # Explicit store/read aliasing and a renamed, heterogeneous final context.
@@ -177,16 +177,16 @@ def explicit_cases():
     stored = TypedExpr("store",arr,(m,TypedExpr.bv_lit(2,1),x))
     for old in [0,255]:
         state = QFAbvValuation(src,(QFAbvArrayValue(ArraySort(2,8),old),7))
-        left = QFAbvStep(wrap(src,TypedExpr.bool_lit(True)),QFAbvUpdate(src,mid,(wrap(src,TypedExpr.bv_lit(8,9)),wrap(src,stored))))
+        left = QFAbvAdapter(wrap(src,TypedExpr.bool_lit(True)),QFAbvUpdate(src,mid,(wrap(src,TypedExpr.bv_lit(8,9)),wrap(src,stored))))
         read = TypedExpr.select(TypedExpr.var("m",arr),TypedExpr.bv_lit(2,1))
-        right = QFAbvStep(wrap(mid,TypedExpr.equal(read,TypedExpr.bv_lit(8,7))),QFAbvUpdate(mid,out,(wrap(mid,read),)))
+        right = QFAbvAdapter(wrap(mid,TypedExpr.equal(read,TypedExpr.bv_lit(8,7))),QFAbvUpdate(mid,out,(wrap(mid,read),)))
         yield TransitionCase(state,left,right), {"composed": [normalized(7)]}
     # Empty contexts are valid: both identities and enabled composition denote
     # the sole empty valuation.
     empty = QFAbvContext(())
     empty_state = QFAbvValuation(empty, ())
-    left = QFAbvStep(wrap(empty, TypedExpr.bool_lit(True)), QFAbvUpdate.identity(empty))
-    right = QFAbvStep.identity(empty)
+    left = QFAbvAdapter(wrap(empty, TypedExpr.bool_lit(True)), QFAbvUpdate.identity(empty))
+    right = QFAbvAdapter.identity(empty)
     yield TransitionCase(empty_state, left, right), {
         "update": [], "composed": [], "sequential": [],
         "identity_update": [], "identity_step": [],

@@ -6,14 +6,31 @@ namespace Ayxg.LTS.QfAbv.SymbolicStepExamples
 open _root_.Ayxg.QfAbv
 
 def reg : Ctx := [⟨"x", .bv 8⟩]
-def input : QFAbvStep reg reg :=
+def empty : Ctx := []
+def input : QFAbvAdapter reg reg :=
   ⟨.boolLit true, .cons (.bvBin .add 8 (.var .here) (.bvLit 8 1)) .nil⟩
-def twice : QFAbvStep reg reg :=
+def twice : QFAbvStep reg :=
   ⟨.eqBv 8 (.var .here) (.bvLit 8 4),
    .cons (.bvBin .mul 8 (.var .here) (.bvLit 8 2)) .nil⟩
-def other : QFAbvStep reg reg :=
+def other : QFAbvStep reg :=
   ⟨.boolNot (.eqBv 8 (.var .here) (.bvLit 8 4)),
    .cons (.bvLit 8 99) .nil⟩
+
+-- Adapters support genuinely heterogeneous source and output contexts.
+example : QFAbvAdapter empty reg :=
+  ⟨.boolLit true, .cons (.bvLit 8 0) .nil⟩
+
+/-- error: Application type mismatch: The argument
+  StateUpdate.identity empty
+has type
+  StateUpdate empty empty
+but is expected to have type
+  StateUpdate reg reg
+in the application
+  { guard := Expr.boolLit true, update := StateUpdate.identity empty }
+-/
+#guard_msgs in
+example : QFAbvStep reg := ⟨.boolLit true, StateUpdate.identity empty⟩
 
 variable [FPInterpretation]
 
@@ -23,16 +40,16 @@ def model : SymbolicTransitionSystem Unit reg (SymbolicTransition Unit reg) :=
   Ayxg.QfAbv.toControlSystem [twice, other]
 def emptyModel : SymbolicTransitionSystem Unit reg (SymbolicTransition Unit reg) :=
   Ayxg.QfAbv.toControlSystem []
-def first : QFAbvStep reg reg :=
+def first : QFAbvAdapter reg reg :=
   (model.symbolicStep input).headD
-    ⟨edgeTwice, QFAbvStep.identity reg⟩ |>.step
-def second : QFAbvStep reg reg :=
+    ⟨edgeTwice, QFAbvAdapter.identity reg⟩ |>.step
+def second : QFAbvAdapter reg reg :=
   (model.symbolicStep input).getD 1
-    ⟨edgeOther, QFAbvStep.identity reg⟩ |>.step
+    ⟨edgeOther, QFAbvAdapter.identity reg⟩ |>.step
 
 -- The returned family retains source edge order, labels, and both branches.
 example : model.symbolicStep input =
-    [⟨edgeTwice, input.compose twice⟩, ⟨edgeOther, input.compose other⟩] := rfl
+    [⟨edgeTwice, input.composeStep twice⟩, ⟨edgeOther, input.composeStep other⟩] := rfl
 example : (model.symbolicStep input).length = 2 := by
   rw [SymbolicTransitionSystem.symbolicStep_length]
   rfl
@@ -48,7 +65,7 @@ example : Eval.evalBool (.cons (4 : BitVec 8) .nil) second.guard = true := rfl
 example : Env.lookup (second.update.eval (.cons (4 : BitVec 8) .nil)) .here = (99 : BitVec 8) := rfl
 
 -- Input rejection remains rejection even when the source edge is enabled.
-def rejected : QFAbvStep reg reg := ⟨.boolLit false, input.update⟩
+def rejected : QFAbvAdapter reg reg := ⟨.boolLit false, input.update⟩
 example : Eval.evalBool (.cons (3 : BitVec 8) .nil)
     ((model.symbolicStep rejected).headD ⟨edgeTwice, input⟩).step.guard = false := rfl
 
@@ -63,7 +80,7 @@ example (ρ : Env reg) (t : Env reg) :
 -- Memory arrays remain supported, and completeness retains the exact edge.
 example {Γinput Γ : Ctx}
     (m : SymbolicTransitionSystem Unit Γ (SymbolicTransition Unit Γ))
-    (i : QFAbvStep Γinput Γ) (ρ : Env Γinput) (edge : SymbolicTransition Unit Γ)
+    (i : QFAbvAdapter Γinput Γ) (ρ : Env Γinput) (edge : SymbolicTransition Unit Γ)
     (t : Env Γ) (h : Eval.evalBool ρ i.guard = true)
     (step : m.toLTS.Tr ⟨(), i.update.eval ρ⟩ edge ⟨(), t⟩) :
     ∃ successor ∈ m.symbolicStep i,

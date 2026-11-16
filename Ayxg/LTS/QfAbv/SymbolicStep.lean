@@ -12,16 +12,16 @@ variable [FPInterpretation]
 composed guard/update step. -/
 structure SymbolicSuccessor (E : Type) (Γinput Γ : Ctx) where
   edge : E
-  step : QFAbvStep Γinput Γ
+  step : QFAbvAdapter Γinput Γ
 
 /-- Voogd stepping for a unit-control source-indexed system. Every returned
 successor retains the exact source edge that produced it. -/
 def symbolicStep {Γinput Γ : Ctx} {E : Type}
     (model : SymbolicTransitionSystem Unit Γ E)
-    (input : QFAbvStep Γinput Γ) : List (SymbolicSuccessor E Γinput Γ) :=
+    (input : QFAbvAdapter Γinput Γ) : List (SymbolicSuccessor E Γinput Γ) :=
   ShareCommon.shareCommon' <|
     (model.transAt ()).map fun edge =>
-      { edge, step := input.compose
+      { edge, step := input.composeStep
           (QFAbvStep.ofSymbolicLabel (model.edgeSemantics.symbolicLabel edge)) }
 
 /-- Regard an already constructed list of labeled symbolic successors as an
@@ -53,13 +53,13 @@ theorem ofSymbolicSuccessors_transition_iff {Γ : Ctx} {E : Type}
       cases targetControl
       simp only [ofSymbolicSuccessors, SymbolicTransitionSystem.toLTS,
         SymbolicEdgeSemantics.denotes, SymbolicEdgeSemantics.nextConfig,
-        QFAbvStep.denotes, true_and, Config.mk.injEq]
+        QFAbvAdapter.denotes, true_and, Config.mk.injEq]
 
 /-- Exact connection between each returned labeled successor and the
 source-indexed LTS transition relation, with the label preserved. -/
 theorem symbolicStep_denotes_iff {Γinput Γ : Ctx} {E : Type}
     (model : SymbolicTransitionSystem Unit Γ E)
-    (input : QFAbvStep Γinput Γ) (ρ : Env Γinput) (edge : E) (target : Env Γ) :
+    (input : QFAbvAdapter Γinput Γ) (ρ : Env Γinput) (edge : E) (target : Env Γ) :
     (∃ successor ∈ model.symbolicStep input,
       successor.edge = edge ∧ successor.step.denotes ρ target) ↔
       Eval.evalBool ρ input.guard = true ∧
@@ -70,7 +70,7 @@ theorem symbolicStep_denotes_iff {Γinput Γ : Ctx} {E : Type}
     simp only at hedge
     subst sourceEdge
     obtain ⟨middle, hinput, hmodel⟩ :=
-      (QFAbvStep.compose_denotes_iff input
+      (QFAbvAdapter.composeStep_denotes_iff input
         (QFAbvStep.ofSymbolicLabel (model.edgeSemantics.symbolicLabel edge))
         ρ target).1 denotes
     rcases hinput with ⟨hguard, hupdate⟩
@@ -99,13 +99,13 @@ theorem symbolicStep_denotes_iff {Γinput Γ : Ctx} {E : Type}
           ⟨(), input.update.eval ρ⟩ = () := Subsingleton.elim _ _
       have henv := congrArg Config.env hnext
       simpa [SymbolicEdgeSemantics.nextConfig, hcontrol] using henv
-    have hcomposed := (QFAbvStep.compose_denotes_iff input
+    have hcomposed := (QFAbvAdapter.composeStep_denotes_iff input
       (QFAbvStep.ofSymbolicLabel (model.edgeSemantics.symbolicLabel edge))
       ρ target).2 ⟨input.update.eval ρ, ⟨hguard, rfl⟩,
         ⟨hlabel.1, hlabel.2⟩⟩
     let successor : SymbolicSuccessor E Γinput Γ := {
       edge := edge
-      step := input.compose
+      step := input.composeStep
         (QFAbvStep.ofSymbolicLabel (model.edgeSemantics.symbolicLabel edge))
     }
     exact ⟨successor, ⟨edge, member, rfl⟩, rfl, hcomposed⟩
@@ -113,7 +113,7 @@ theorem symbolicStep_denotes_iff {Γinput Γ : Ctx} {E : Type}
 /-- Packaging a symbolic step as an STS preserves its exact source transition,
 including the original edge label and the input guard/update semantics. -/
 theorem ofSymbolicSuccessors_symbolicStep_transition_iff {Γ : Ctx} {E : Type}
-    (model : SymbolicTransitionSystem Unit Γ E) (input : QFAbvStep Γ Γ)
+    (model : SymbolicTransitionSystem Unit Γ E) (input : QFAbvAdapter Γ Γ)
     (source : Env Γ) (edge : E) (target : Env Γ) :
     (∃ successor,
       (ofSymbolicSuccessors (model.symbolicStep input)).toLTS.Tr
@@ -133,7 +133,7 @@ theorem ofSymbolicSuccessors_symbolicStep_transition_iff {Γ : Ctx} {E : Type}
 /-- Every admitted returned successor denotes its own exact source edge. -/
 theorem symbolicStep_sound {Γinput Γ : Ctx} {E : Type}
     (model : SymbolicTransitionSystem Unit Γ E)
-    (input : QFAbvStep Γinput Γ) (successor : SymbolicSuccessor E Γinput Γ)
+    (input : QFAbvAdapter Γinput Γ) (successor : SymbolicSuccessor E Γinput Γ)
     (member : successor ∈ model.symbolicStep input) (ρ : Env Γinput)
     (admitted : Eval.evalBool ρ successor.step.guard = true) :
     Eval.evalBool ρ input.guard = true ∧
@@ -149,7 +149,7 @@ theorem symbolicStep_sound {Γinput Γ : Ctx} {E : Type}
 with the same edge label and its exact concrete target. -/
 theorem symbolicStep_complete {Γinput Γ : Ctx} {E : Type}
     (model : SymbolicTransitionSystem Unit Γ E)
-    (input : QFAbvStep Γinput Γ) (ρ : Env Γinput) (edge : E)
+    (input : QFAbvAdapter Γinput Γ) (ρ : Env Γinput) (edge : E)
     (target : Env Γ)
     (admitted : Eval.evalBool ρ input.guard = true)
     (transition : model.toLTS.Tr ⟨(), input.update.eval ρ⟩ edge ⟨(), target⟩) :
@@ -162,7 +162,7 @@ omit [FPInterpretation] in
 /-- Enumeration preserves edge count, including duplicate or infeasible edges. -/
 theorem symbolicStep_length {Γinput Γ : Ctx} {E : Type}
     (model : SymbolicTransitionSystem Unit Γ E)
-    (input : QFAbvStep Γinput Γ) :
+    (input : QFAbvAdapter Γinput Γ) :
     (model.symbolicStep input).length = (model.transAt ()).length := by
   simp only [symbolicStep, ShareCommon.shareCommon', List.length_map]
 

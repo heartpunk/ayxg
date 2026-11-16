@@ -11,7 +11,7 @@ from typing import Generic, TypeAlias, TypeVar
 
 from .expr import BOOL, Declaration, TermSort, TypedExpr, free_references
 from .fp import FPValue, RoundingMode
-from .segments import Adapter, Segment
+from .segments import Segment
 from .sts import STS
 from .substitution import substitute_exprs
 
@@ -142,8 +142,51 @@ class QFAbvUpdate(Generic[C, D]):
             QFAbvExpr(self.source, expression.sort, node)
             for expression, node in zip(right.rhs, nodes)))
 
+def _compose_guarded(
+    left_guard: QFAbvExpr[C, BoolSort], left_update: QFAbvUpdate[C, D],
+    right_guard: QFAbvExpr[D, BoolSort], right_update: QFAbvUpdate[D, E],
+) -> tuple[QFAbvExpr[C, BoolSort], QFAbvUpdate[C, E]]:
+    """Compose both the guard and the simultaneous update."""
+    update = left_update.compose(right_update)
+    lifted = right_guard.substitute(left_update)
+    guard = TypedExpr.conjoin(left_guard.node, lifted.node)
+    return QFAbvExpr(update.source, BoolSort(), guard), update
+
+
 @dataclass(frozen=True)
-class QFAbvStep(Generic[C, D]):
+class QFAbvStep(Generic[C]):
+    """A guarded transition within one state context."""
+    guard: QFAbvExpr[C, BoolSort]
+    update: QFAbvUpdate[C, C]
+
+    def __post_init__(self) -> None:
+        if self.guard.context != self.update.source or self.guard.node.sort != BOOL:
+            raise ValueError("guard must be Bool over the update input context")
+        if self.update.source != self.update.target:
+            raise ValueError("step input and output contexts must match")
+
+    @classmethod
+    def identity(cls, context: QFAbvContext[C]) -> QFAbvStep[C]:
+        return QFAbvStep(QFAbvExpr(context, BoolSort(), TypedExpr.bool_lit(True)),
+                         QFAbvUpdate[C, C].identity(context))
+
+    def compose(self, right: QFAbvStep[C]) -> QFAbvStep[C]:
+        if not isinstance(right, QFAbvStep):
+            raise TypeError("compose expects a step; use compose_adapter for an adapter")
+        return QFAbvStep(*_compose_guarded(self.guard, self.update, right.guard, right.update))
+
+    def to_adapter(self) -> QFAbvAdapter[C, C]:
+        return QFAbvAdapter(self.guard, self.update)
+
+    def compose_adapter(self, right: QFAbvAdapter[C, D]) -> QFAbvAdapter[C, D]:
+        if not isinstance(right, QFAbvAdapter):
+            raise TypeError("compose_adapter expects an adapter")
+        return QFAbvAdapter(*_compose_guarded(self.guard, self.update, right.guard, right.update))
+
+
+@dataclass(frozen=True)
+class QFAbvAdapter(Generic[C, D]):
+    """A guarded translation between state contexts, distinct from a step."""
     guard: QFAbvExpr[C, BoolSort]
     update: QFAbvUpdate[C, D]
 
@@ -152,15 +195,19 @@ class QFAbvStep(Generic[C, D]):
             raise ValueError("guard must be Bool over the update input context")
 
     @classmethod
-    def identity(cls, context: QFAbvContext[C]) -> QFAbvStep[C, C]:
-        return QFAbvStep(QFAbvExpr(context, BoolSort(), TypedExpr.bool_lit(True)),
-                         QFAbvUpdate[C, C].identity(context))
+    def identity(cls, context: QFAbvContext[C]) -> QFAbvAdapter[C, C]:
+        return QFAbvAdapter(QFAbvExpr(context, BoolSort(), TypedExpr.bool_lit(True)),
+                            QFAbvUpdate.identity(context))
 
-    def compose(self, right: QFAbvStep[D, E]) -> QFAbvStep[C, E]:
-        update = self.update.compose(right.update)
-        lifted = right.guard.substitute(self.update)
-        guard = TypedExpr.conjoin(self.guard.node, lifted.node)
-        return QFAbvStep(QFAbvExpr(update.source, BoolSort(), guard), update)
+    def compose(self, right: QFAbvAdapter[D, E]) -> QFAbvAdapter[C, E]:
+        if not isinstance(right, QFAbvAdapter):
+            raise TypeError("compose expects an adapter; use compose_step for a step")
+        return QFAbvAdapter(*_compose_guarded(self.guard, self.update, right.guard, right.update))
+
+    def compose_step(self, right: QFAbvStep[D]) -> QFAbvAdapter[C, D]:
+        if not isinstance(right, QFAbvStep):
+            raise TypeError("compose_step expects a step")
+        return QFAbvAdapter(*_compose_guarded(self.guard, self.update, right.guard, right.update))
 
 @dataclass(frozen=True)
 class QFAbvArrayValue:
@@ -212,20 +259,19 @@ class QFAbvValuation(Generic[C]):
 class QFAbvSTS(Generic[C]):
     """All state, including PC/control, belongs to this one context."""
     context: QFAbvContext[C]
-    steps: tuple[QFAbvStep[C, C], ...]
+    steps: tuple[QFAbvStep[C], ...]
 
     def __post_init__(self) -> None:
         for step in self.steps:
-            if step.update.source != self.context or step.update.target != self.context:
+            if not isinstance(step, QFAbvStep) or step.update.source != self.context:
                 raise ValueError("STS step does not use its full state context")
 
-    def to_sts(self) -> STS[QFAbvValuation[C], QFAbvStep[C, C]]:
+    def to_sts(self) -> STS[QFAbvValuation[C], QFAbvStep[C]]:
         return STS(self.steps)
 
-QFAbvAdapter: TypeAlias = Adapter[QFAbvValuation[C], QFAbvValuation[D], QFAbvStep[C, D]]
 QFAbvSegment: TypeAlias = Segment[
     QFAbvValuation[C], QFAbvValuation[D], QFAbvValuation[E],
-    QFAbvStep[D, D], QFAbvStep[C, D], QFAbvStep[D, E]]
+    QFAbvStep[D], QFAbvAdapter[C, D], QFAbvAdapter[D, E]]
 @dataclass(frozen=True)
 class QFAbvControlView(Generic[C, S]):
     """Optional typed expression projecting existing state control."""
