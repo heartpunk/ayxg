@@ -1,7 +1,7 @@
 """Context- and sort-indexed QF_ABV STSes and interface adapters.
 
 The marker C tracks a context statically; runtime declarations track its actual
-names and widths. S is a concrete Bool/BV/Array sort witness. Python enforces
+names and widths. S_co is a concrete Bool/BV/Array sort witness. Python enforces
 local structural invariants; the corresponding Lean definitions state laws.
 """
 from __future__ import annotations
@@ -56,7 +56,7 @@ class RoundingModeSort:
         return TermSort.rounding_mode()
 
 Sort: TypeAlias = BoolSort | BVSort | ArraySort | FPSort | RoundingModeSort
-S = TypeVar("S", bound=Sort, covariant=True)
+S_co = TypeVar("S_co", bound=Sort, covariant=True)
 
 def decode_sort(raw: TermSort) -> Sort:
     if raw.kind == "bool":
@@ -81,13 +81,13 @@ class QFAbvContext(Generic[C]):
             if declaration is None or declaration.sort != sort:
                 raise ValueError(f"variable {ref!r} absent or has wrong sort")
 
-    def expression(self, node: TypedExpr, sort: S) -> QFAbvExpr[C, S]:
+    def expression(self, node: TypedExpr, sort: S_co) -> QFAbvExpr[C, S_co]:
         return QFAbvExpr(self, sort, node)
 
 @dataclass(frozen=True)
-class QFAbvExpr(Generic[C, S]):
+class QFAbvExpr(Generic[C, S_co]):
     context: QFAbvContext[C]
-    sort: S
+    sort: S_co
     node: TypedExpr
 
     def __post_init__(self) -> None:
@@ -95,7 +95,7 @@ class QFAbvExpr(Generic[C, S]):
             raise ValueError("sort witness disagrees with expression")
         self.context.check_expression(self.node)
 
-    def substitute(self, update: QFAbvUpdate[D, C]) -> QFAbvExpr[D, S]:
+    def substitute(self, update: QFAbvUpdate[D, C]) -> QFAbvExpr[D, S_co]:
         if update.target != self.context:
             raise ValueError("substitution output context disagrees")
         node, = substitute_exprs((self.node,), update.replacements(), positional=tuple(e.node for e in update.rhs))
@@ -273,6 +273,6 @@ QFAbvSegment: TypeAlias = Segment[
     QFAbvValuation[C], QFAbvValuation[D], QFAbvValuation[E],
     QFAbvStep[D], QFAbvAdapter[C, D], QFAbvAdapter[D, E]]
 @dataclass(frozen=True)
-class QFAbvControlView(Generic[C, S]):
+class QFAbvControlView(Generic[C, S_co]):
     """Optional typed expression projecting existing state control."""
-    projection: QFAbvExpr[C, S]
+    projection: QFAbvExpr[C, S_co]
