@@ -17,6 +17,7 @@ from .qfabv import (
     BoolSort,
     BVSort,
     FPSort,
+    QFAbvAdapter,
     QFAbvArrayValue,
     QFAbvExpr,
     QFAbvStep,
@@ -202,11 +203,22 @@ def eval_update(update: QFAbvUpdate[C, D], state: QFAbvValuation[C], fp_interpre
     return QFAbvValuation(update.target, eval_exprs(update.rhs, state, fp_interpretation))
 
 
-def eval_step(step: QFAbvStep[C, D], state: QFAbvValuation[C], fp_interpretation: FPInterpretation | None = None) -> QFAbvValuation[D] | None:
+def eval_step(step: QFAbvStep[C], state: QFAbvValuation[C], fp_interpretation: FPInterpretation | None = None) -> QFAbvValuation[C] | None:
     """Return the guarded successor, or None when the step is disabled."""
+    if not isinstance(step, QFAbvStep):
+        raise TypeError("eval_step requires a QFAbvStep")
     if not eval_expr(step.guard, state, fp_interpretation):
         return None
     return eval_update(step.update, state, fp_interpretation)
+
+
+def eval_adapter(adapter: QFAbvAdapter[C, D], state: QFAbvValuation[C], fp_interpretation: FPInterpretation | None = None) -> QFAbvValuation[D] | None:
+    """Apply a guarded state-context adapter when its guard is enabled."""
+    if not isinstance(adapter, QFAbvAdapter):
+        raise TypeError("eval_adapter requires a QFAbvAdapter")
+    if not eval_expr(adapter.guard, state, fp_interpretation):
+        return None
+    return eval_update(adapter.update, state, fp_interpretation)
 
 
 def _equal_values(left: Value, right: Value) -> bool:
@@ -232,9 +244,22 @@ class QFAbvSemantics:
     def __init__(self, fp_interpretation: FPInterpretation | None = None):
         self.fp_interpretation = fp_interpretation
 
-    def denotes(self, source: QFAbvValuation[C], step: QFAbvStep[C, D],
-                target: QFAbvValuation[D], /) -> bool:
+    def denotes(self, source: QFAbvValuation[C], step: QFAbvStep[C],
+                target: QFAbvValuation[C], /) -> bool:
         if source.context != step.update.source or target.context != step.update.target:
             return False
         successor = eval_step(step, source, self.fp_interpretation)
+        return successor is not None and equal_valuations(successor, target)
+
+
+class QFAbvAdapterSemantics:
+    """Interpret guarded adapters between state contexts."""
+    def __init__(self, fp_interpretation: FPInterpretation | None = None):
+        self.fp_interpretation = fp_interpretation
+
+    def denotes(self, source: QFAbvValuation[C], adapter: QFAbvAdapter[C, D],
+                target: QFAbvValuation[D], /) -> bool:
+        if source.context != adapter.update.source or target.context != adapter.update.target:
+            return False
+        successor = eval_adapter(adapter, source, self.fp_interpretation)
         return successor is not None and equal_valuations(successor, target)

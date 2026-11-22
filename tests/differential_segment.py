@@ -7,9 +7,9 @@ import json
 from pathlib import Path
 from hypothesis import given, settings, strategies as st
 from hypothesis.database import DirectoryBasedExampleDatabase
-from ayxg import (Adapter, Declaration, QFAbvContext, QFAbvStep, QFAbvUpdate,
+from ayxg import (Adapter, Declaration, QFAbvAdapter, QFAbvContext, QFAbvStep, QFAbvUpdate,
                   QFAbvValuation, Segment, SegmentDAG, SegmentNode, STS,
-                  TypedExpr, TermSort, eval_step)
+                  TypedExpr, TermSort, eval_adapter, eval_step)
 from ayxg.substitution import substitute_exprs
 from differential_expr import LeanOracle
 from differential_transition import transition_cases, wrap, step_data, values_data, state_result
@@ -33,14 +33,14 @@ def explore(segment,state,fuel,coverage=None):
     def record(guard,enabled):
         if coverage is not None and has_variable(guard.node):
             coverage["state_guard_true" if enabled else "state_guard_false"] += 1
-    first = eval_step(segment.input.label,state)
+    first = eval_adapter(segment.input.label,state)
     record(segment.input.label.guard,first is not None)
     frontier = [] if first is None else [first]
     outputs = []
     for _ in range(fuel+1):
         for state in frontier:
             for exit in segment.exits:
-                result = eval_step(exit.label,state)
+                result = eval_adapter(exit.label,state)
                 record(exit.label.guard,result is not None)
                 if result is not None:
                     outputs.append(state_result(result))
@@ -89,8 +89,8 @@ def cases(draw,fuel,lane):
     replacements = {d.name:TypedExpr.var("in_"+d.name,d.sort) for d in body.declarations}
     nodes = substitute_exprs((base.left.guard.node,*(e.node for e in base.left.update.rhs)),replacements)
     guard = TypedExpr.bool_lit(False) if lane == "disabled_entry" else TypedExpr.bool_lit(True) if lane in {"enabled", "mixed_exits"} else nodes[0]
-    entry = QFAbvStep(wrap(source,guard),QFAbvUpdate(source,body,tuple(wrap(source,n) for n in nodes[1:])))
-    steps = (base.left,base.right)
+    entry = QFAbvAdapter(wrap(source,guard),QFAbvUpdate(source,body,tuple(wrap(source,n) for n in nodes[1:])))
+    steps = tuple(QFAbvStep(s.guard, s.update) for s in (base.left, base.right))
     if lane in {"enabled", "mixed_exits"}:
         steps = tuple(QFAbvStep(wrap(body,TypedExpr.bool_lit(True)),s.update) for s in steps)
     target = QFAbvContext(tuple(Declaration("out_"+d.name,d.sort) for d in reversed(body.declarations)))
@@ -109,7 +109,7 @@ def cases(draw,fuel,lane):
                 node = TypedExpr.binary("bv_add", node, TypedExpr.bv_lit(declaration.sort.width, exit_index))
             rhs.append(wrap(body, node))
         update = QFAbvUpdate(body,target,tuple(rhs))
-        exits.append(Adapter(QFAbvStep(wrap(body,guard),update)))
+        exits.append(Adapter(QFAbvAdapter(wrap(body,guard),update)))
     return Case(Segment(Adapter(entry),STS(steps),tuple(exits)),state,fuel)
 
 
@@ -154,12 +154,12 @@ def explicit_cases():
     source = QFAbvContext((Declaration("in_x",bv),))
     body = QFAbvContext((Declaration("x",bv),))
     output = QFAbvContext((Declaration("out_x",bv),))
-    entry = QFAbvStep(wrap(source,TypedExpr.bool_lit(True)),
+    entry = QFAbvAdapter(wrap(source,TypedExpr.bool_lit(True)),
         QFAbvUpdate(source,body,(wrap(source,TypedExpr.var("in_x",bv)),)))
     x = TypedExpr.var("x",bv)
     steps = tuple(QFAbvStep(wrap(body,TypedExpr.bool_lit(True)),
         QFAbvUpdate(body,body,(wrap(body,TypedExpr.binary("bv_add",x,TypedExpr.bv_lit(8,n))),))) for n in [1,2])
-    exit = QFAbvStep(wrap(body,TypedExpr.bool_lit(True)),QFAbvUpdate(body,output,(wrap(body,x),)))
+    exit = QFAbvAdapter(wrap(body,TypedExpr.bool_lit(True)),QFAbvUpdate(body,output,(wrap(body,x),)))
     segment = Segment(Adapter(entry),STS(steps),(Adapter(exit),))
     for fuel in range(4):
         yield Case(segment,QFAbvValuation(source,(0,)),fuel), output_set(
@@ -167,16 +167,16 @@ def explicit_cases():
     # Empty body supports zero-step exits; no exits gives the empty relation.
     yield Case(Segment(Adapter(entry),STS(()),(Adapter(exit),)),QFAbvValuation(source,(9,)),3), output_set([[{"kind":"bv","value":9}]])
     # Distinct enabled output adapters contribute distinct results.
-    plus_one = QFAbvStep(wrap(body,TypedExpr.bool_lit(True)),
+    plus_one = QFAbvAdapter(wrap(body,TypedExpr.bool_lit(True)),
         QFAbvUpdate(body,output,(wrap(body,TypedExpr.binary("bv_add",x,TypedExpr.bv_lit(8,1))),)))
     yield Case(Segment(Adapter(entry),STS(()),(Adapter(exit),Adapter(plus_one))),
         QFAbvValuation(source,(9,)),0), output_set([
             [{"kind":"bv","value":9}], [{"kind":"bv","value":10}]])
     yield Case(Segment(Adapter(entry),STS((steps[0],)),()),QFAbvValuation(source,(9,)),3), []
-    disabled_entry = QFAbvStep(wrap(source,TypedExpr.bool_lit(False)),entry.update)
+    disabled_entry = QFAbvAdapter(wrap(source,TypedExpr.bool_lit(False)),entry.update)
     yield Case(Segment(Adapter(disabled_entry),STS((steps[0],)),(Adapter(exit),)),
         QFAbvValuation(source,(9,)),1), []
-    disabled_exit = QFAbvStep(wrap(body,TypedExpr.bool_lit(False)),exit.update)
+    disabled_exit = QFAbvAdapter(wrap(body,TypedExpr.bool_lit(False)),exit.update)
     yield Case(Segment(Adapter(entry),STS((steps[0],)),(Adapter(disabled_exit),)),
         QFAbvValuation(source,(9,)),1), []
     # A self-loop remains bounded by the chosen run length.
@@ -195,14 +195,14 @@ def explicit_cases():
         wrap(source2,TypedExpr.var("src_pc",bv)),
         wrap(source2,TypedExpr.var("src_flag",TermSort.bool())),
         wrap(source2,initial_memory))
-    entry2 = QFAbvStep(wrap(source2,TypedExpr.bool_lit(True)),
+    entry2 = QFAbvAdapter(wrap(source2,TypedExpr.bool_lit(True)),
         QFAbvUpdate(source2,body2,entry_rhs))
     pc = TypedExpr.var("pc",bv)
     advance2 = QFAbvStep(wrap(body2,TypedExpr.bool_lit(True)),QFAbvUpdate(body2,body2,(
         wrap(body2,TypedExpr.binary("bv_add",pc,TypedExpr.bv_lit(8,1))),
         wrap(body2,TypedExpr.var("flag",TermSort.bool())),
         wrap(body2,TypedExpr.var("mem",TermSort.array(2,8))))))
-    exit2 = QFAbvStep(wrap(body2,TypedExpr.bool_lit(True)),QFAbvUpdate(body2,target2,
+    exit2 = QFAbvAdapter(wrap(body2,TypedExpr.bool_lit(True)),QFAbvUpdate(body2,target2,
         (wrap(body2,pc),)))
     yield Case(Segment(Adapter(entry2),STS((advance2,)),(Adapter(exit2),)),
         QFAbvValuation(source2,(5,True)),1,target2), output_set([

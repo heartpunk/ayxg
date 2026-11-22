@@ -9,7 +9,7 @@ open _root_.Ayxg.LTS.QfAbv
 
 /-- Embed one whole-state QF_ABV transformer as an edge at the sole structural
 control site. Any program counter or error state remains in the environment. -/
-def QFAbvStep.toControlEdge {Γ : Ctx} (step : QFAbvStep Γ Γ) :
+def QFAbvStep.toControlEdge {Γ : Ctx} (step : QFAbvStep Γ) :
     _root_.Ayxg.LTS.QfAbv.SymbolicTransition Unit Γ where
   src := ()
   tgt := none
@@ -17,7 +17,7 @@ def QFAbvStep.toControlEdge {Γ : Ctx} (step : QFAbvStep Γ Γ) :
 
 /-- View a finite list of whole-state transformers through the preferred
 source-indexed symbolic transition system. -/
-def toControlSystem {Γ : Ctx} (steps : List (QFAbvStep Γ Γ)) :
+def toControlSystem {Γ : Ctx} (steps : List (QFAbvStep Γ)) :
     _root_.Ayxg.LTS.QfAbv.SymbolicTransitionSystem Unit Γ
       (_root_.Ayxg.LTS.QfAbv.SymbolicTransition Unit Γ) :=
   _root_.Ayxg.LTS.QfAbv.SymbolicTransitionSystem.legacy
@@ -35,7 +35,7 @@ private theorem toControlEdge_injective {Γ : Ctx} :
 
 /-- A converted edge occurs precisely when its original transformer occurs. -/
 theorem toControlEdge_mem_iff {Γ : Ctx}
-    (steps : List (QFAbvStep Γ Γ)) (step : QFAbvStep Γ Γ) :
+    (steps : List (QFAbvStep Γ)) (step : QFAbvStep Γ) :
     QFAbvStep.toControlEdge step ∈ (toControlSystem steps).transAt () ↔
       step ∈ steps := by
   change QFAbvStep.toControlEdge step ∈ steps.map QFAbvStep.toControlEdge ↔
@@ -49,7 +49,7 @@ theorem toControlEdge_mem_iff {Γ : Ctx}
     exact List.mem_map.mpr ⟨step, h, rfl⟩
 
 /-- The converted edge has exactly the original guard/update denotation. -/
-theorem toControlEdge_denotes_iff {Γ : Ctx} (step : QFAbvStep Γ Γ)
+theorem toControlEdge_denotes_iff {Γ : Ctx} (step : QFAbvStep Γ)
     (source target : Env Γ) :
     _root_.Ayxg.LTS.QfAbv.SymbolicTransition.denotes
       (QFAbvStep.toControlEdge step) ⟨(), source⟩ ⟨(), target⟩ ↔
@@ -64,7 +64,7 @@ theorem toControlEdge_denotes_iff {Γ : Ctx} (step : QFAbvStep Γ Γ)
 /-- Exact labeled correspondence between a list entry and its source-indexed
 edge. The complete source and target environments are retained. -/
 theorem toControlSystem_step_iff {Γ : Ctx}
-    (steps : List (QFAbvStep Γ Γ)) (step : QFAbvStep Γ Γ)
+    (steps : List (QFAbvStep Γ)) (step : QFAbvStep Γ)
     (source target : Env Γ) :
     (step ∈ steps ∧ step.denotes source target) ↔
       (toControlSystem steps).toLTS.Tr ⟨(), source⟩
