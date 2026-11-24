@@ -1,5 +1,5 @@
 import Ayxg.QfAbv.FpTypes
-import FloatLib.Floats.Formats.BinaryInterchange.SMT.Proof
+import Ayxg.QfAbv.FloatSMT
 
 namespace Ayxg.QfAbv
 open FloatLib.Floats.Formats.BinaryInterchange
@@ -112,9 +112,7 @@ def toBV {f : FPFormat} (signed : Bool) (width : Nat) (rm : RoundingMode) (x : F
 def fromBV (signed : Bool) (f : FPFormat) (rm : RoundingMode) {width : Nat} (x : BitVec width) : FPValue f :=
   let n : Int := if signed then x.toInt else x.toNat
   let exact : FloatLib.Numerics.Dyadic := { negative := n < 0, significand := n.natAbs, exponent := 0 }
-  FPValue.ofModel <| match (mode rm).ieee? with
-  | some ieee => Model.roundDyadicWithRounding f.floatFormat ieee exact
-  | none => Model.SMT.roundRNA f.floatFormat exact
+  FPValue.ofModel (Model.SMT.roundDyadic f.floatFormat (mode rm) exact)
 
 def cast (src dst : FPFormat) (rm : RoundingMode) (x : FPValue src) : FPValue dst :=
   FPValue.ofModel (Model.SMT.cast src.floatFormat dst.floatFormat (mode rm) x.model)

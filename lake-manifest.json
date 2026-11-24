@@ -6,7 +6,7 @@
    "name": "floatlib",
    "manifestFile": "lake-manifest.json",
    "inherited": false,
-   "dir": ".lake/floatlib-source-7553d244c7a4e02ffbbdc21eb66b70b9f37bb5e39e6f36a2dedb7834e1f830af",
+   "dir": ".lake/floatlib-source-d24844f039320a024c7548f992920562d9a71a60-axiom-footprint",
    "configFile": "lakefile.lean"},
   {"url": "https://github.com/leanprover-community/mathlib4",
    "type": "git",

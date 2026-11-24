@@ -10,7 +10,7 @@ import z3
 def main():
     parser=argparse.ArgumentParser();parser.add_argument('--out',type=Path,required=True)
     args=parser.parse_args(); rng=random.Random(20261002)
-    out=['import FloatLib.Floats.Formats.BinaryInterchange.SMT.Proof', 'set_option maxRecDepth 4096',
+    out=['import Ayxg.QfAbv.FloatSMT', 'set_option maxRecDepth 4096',
          'open FloatLib.Floats.Formats.BinaryInterchange',
          'def check {f : FloatFormat} (name : String) (actual : Model f) (expected : Nat) (nan : Bool) : IO Unit := do',
          '  let good := if nan then actual.isNaN else actual.toNatBits == expected',
