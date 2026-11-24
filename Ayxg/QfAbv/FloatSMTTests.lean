@@ -23,6 +23,14 @@ private def fmt : FloatFormat := FloatFormat.ieee 3 3 (by decide) (by decide)
 private def posZero : Model fmt := Model.ofNatBits 0
 private def negZero : Model fmt := Model.ofNatBits 64
 private def qNaN : Model fmt := Model.ofNatBits 57
+private def one : Model fmt := Model.ofNatBits 24
+private def oneSixteenth : Model fmt := Model.ofNatBits 2
+
+example : (Model.SMT.add .rne one oneSixteenth).toNatBits = 24 := by decide
+example : (Model.SMT.add .rna one oneSixteenth).toNatBits = 25 := by decide
+example : (Model.SMT.add .rtp one oneSixteenth).toNatBits = 25 := by decide
+example : (Model.SMT.add .rtn one oneSixteenth).toNatBits = 24 := by decide
+example : (Model.SMT.add .rtz one oneSixteenth).toNatBits = 24 := by decide
 
 example : (Model.SMT.add .rtn negZero posZero).signBit = true := by decide
 example : (Model.SMT.add .rne negZero posZero).signBit = false := by decide
