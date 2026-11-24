@@ -22,15 +22,14 @@
           patches = [
             # Preserve the existing axiom-footprint workaround. Only the RNA
             # patch is retired by the Lean 4.36 upstream FloatLib migration.
-            ./nix/floatlib-axiom-footprint.patch
+            ./nix/floatlib-axiom-footprint-lean436.patch
           ];
         };
         in let z3Python = import ./nix/z3-python.nix { inherit pkgs; };
           python = pkgs.python312.withPackages (_: [ z3Python ]);
           bazel = import (ifrl.outPath + "/nix/bazel.nix") { inherit pkgs; };
-          projectShell = pkgs.mkShell {
-            inputsFrom = [ ifrl.devShells.${system}.default ];
-            IFRL_ANGR_ENVIRONMENT = "${ifrl.packages.${system}.angr-python}";
+          projectShell = {
+            packages = [ pkgs.git pkgs.curl pkgs.lean python bazel ];
             AYXG_NIX_LIBSTDCXX_ROOT =
               pkgs.lib.optionalString pkgs.stdenv.isLinux "${pkgs.stdenv.cc.cc.lib}";
             shellHook = ''
@@ -39,8 +38,11 @@
             '';
           };
         in {
-          default = projectShell;
-          ci = projectShell;
+          default = pkgs.mkShell (projectShell // {
+            inputsFrom = [ ifrl.devShells.${system}.default ];
+            IFRL_ANGR_ENVIRONMENT = "${ifrl.packages.${system}.angr-python}";
+          });
+          ci = pkgs.mkShell projectShell;
         });
     };
 }
