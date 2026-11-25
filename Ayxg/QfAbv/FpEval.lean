@@ -15,7 +15,7 @@ def canonicalNaN (f : FPFormat) : Model f.floatFormat :=
 structure FPValue (f : FPFormat) where
   model : Model f.floatFormat
   canonical : model.isNaN = false ∨ model = canonicalNaN f
-  deriving DecidableEq, Repr
+  deriving DecidableEq
 
 def FPValue.ofModel {f : FPFormat} (value : Model f.floatFormat) : FPValue f :=
   if h : value.isNaN = true then ⟨canonicalNaN f, Or.inr rfl⟩
