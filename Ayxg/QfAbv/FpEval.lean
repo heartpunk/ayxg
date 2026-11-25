@@ -81,7 +81,7 @@ def rounded {f : FPFormat} (op : FpRoundedOp) (rm : RoundingMode) (x y : FPValue
 def fma {f : FPFormat} (rm : RoundingMode) (x y z : FPValue f) : FPValue f :=
   FPValue.ofModel (Model.SMT.fma (mode rm) x.model y.model z.model)
 def sqrt {f : FPFormat} (rm : RoundingMode) (x : FPValue f) : FPValue f :=
-  FPValue.ofModel (Model.SMT.sqrt (by rfl) (mode rm) x.model)
+  FPValue.ofModel (Model.SMT.sqrt (mode rm) x.model)
 def roundToIntegral {f : FPFormat} (rm : RoundingMode) (x : FPValue f) : FPValue f :=
   FPValue.ofModel (Model.SMT.roundToIntegral (mode rm) x.model)
 
