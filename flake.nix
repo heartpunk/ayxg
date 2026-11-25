@@ -33,6 +33,7 @@
             AYXG_NIX_LIBSTDCXX_ROOT =
               pkgs.lib.optionalString pkgs.stdenv.isLinux "${pkgs.stdenv.cc.cc.lib}";
             shellHook = ''
+              export CPATH="${pkgs.lib.optionalString pkgs.stdenv.isLinux "${pkgs.glibc.dev}/include"}''${CPATH:+:$CPATH}"
               export AYXG_FLOATLIB_SOURCE="${floatlib}"
               export AYXG_FLOATLIB_SOURCE_KEY="d24844f039320a024c7548f992920562d9a71a60-axiom-footprint"
             '';
