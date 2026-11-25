@@ -95,7 +95,7 @@ def compare {f : FPFormat} (op : FpCompareOp) (x y : FPValue f) : Bool :=
 def classify {f : FPFormat} (op : FpClassifyOp) (x : FPValue f) : Bool :=
   match op with
   | .normal => x.model.expField != 0 && x.model.isFinite | .subnormal => x.model.isSubnormal
-  | .zero => x.model.isZero | .infinite => x.model.isInf | .nan => x.model.isNaN
+  | .zero => x.model.isZero | .infinite => x.model.isInfinite | .nan => x.model.isNaN
   | .negative => !x.model.isNaN && x.model.signBit
   | .positive => !x.model.isNaN && !x.model.signBit
 

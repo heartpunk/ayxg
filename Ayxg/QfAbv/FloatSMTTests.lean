@@ -4,8 +4,8 @@ open FloatLib.Floats.Formats.BinaryInterchange
 
 namespace Ayxg.QfAbv.FloatSMTTests
 
-private def half : Numerics.Dyadic := { negative := false, significand := 1, exponent := -1 }
-private def negHalf : Numerics.Dyadic := { negative := true, significand := 1, exponent := -1 }
+private def half : FloatLib.Numerics.Dyadic := { negative := false, significand := 1, exponent := -1 }
+private def negHalf : FloatLib.Numerics.Dyadic := { negative := true, significand := 1, exponent := -1 }
 
 example : Model.SMT.roundToInt .rne half = 0 := by decide
 example : Model.SMT.roundToInt .rna half = 1 := by decide
