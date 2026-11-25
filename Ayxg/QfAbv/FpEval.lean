@@ -1,5 +1,5 @@
 import Ayxg.QfAbv.FpTypes
-import FloatLib.Floats.Formats.BinaryInterchange.SMT.Proof
+import Ayxg.QfAbv.FloatSMT
 
 namespace Ayxg.QfAbv
 open FloatLib.Floats.Formats.BinaryInterchange
@@ -15,7 +15,7 @@ def canonicalNaN (f : FPFormat) : Model f.floatFormat :=
 structure FPValue (f : FPFormat) where
   model : Model f.floatFormat
   canonical : model.isNaN = false ∨ model = canonicalNaN f
-  deriving DecidableEq, Repr
+  deriving DecidableEq
 
 def FPValue.ofModel {f : FPFormat} (value : Model f.floatFormat) : FPValue f :=
   if h : value.isNaN = true then ⟨canonicalNaN f, Or.inr rfl⟩
@@ -81,7 +81,7 @@ def rounded {f : FPFormat} (op : FpRoundedOp) (rm : RoundingMode) (x y : FPValue
 def fma {f : FPFormat} (rm : RoundingMode) (x y z : FPValue f) : FPValue f :=
   FPValue.ofModel (Model.SMT.fma (mode rm) x.model y.model z.model)
 def sqrt {f : FPFormat} (rm : RoundingMode) (x : FPValue f) : FPValue f :=
-  FPValue.ofModel (Model.SMT.sqrt (by rfl) (mode rm) x.model)
+  FPValue.ofModel (Model.SMT.sqrt (mode rm) x.model)
 def roundToIntegral {f : FPFormat} (rm : RoundingMode) (x : FPValue f) : FPValue f :=
   FPValue.ofModel (Model.SMT.roundToIntegral (mode rm) x.model)
 
@@ -95,7 +95,7 @@ def compare {f : FPFormat} (op : FpCompareOp) (x y : FPValue f) : Bool :=
 def classify {f : FPFormat} (op : FpClassifyOp) (x : FPValue f) : Bool :=
   match op with
   | .normal => x.model.expField != 0 && x.model.isFinite | .subnormal => x.model.isSubnormal
-  | .zero => x.model.isZero | .infinite => x.model.isInf | .nan => x.model.isNaN
+  | .zero => x.model.isZero | .infinite => x.model.isInfinite | .nan => x.model.isNaN
   | .negative => !x.model.isNaN && x.model.signBit
   | .positive => !x.model.isNaN && !x.model.signBit
 
@@ -112,9 +112,7 @@ def toBV {f : FPFormat} (signed : Bool) (width : Nat) (rm : RoundingMode) (x : F
 def fromBV (signed : Bool) (f : FPFormat) (rm : RoundingMode) {width : Nat} (x : BitVec width) : FPValue f :=
   let n : Int := if signed then x.toInt else x.toNat
   let exact : FloatLib.Numerics.Dyadic := { negative := n < 0, significand := n.natAbs, exponent := 0 }
-  FPValue.ofModel <| match (mode rm).ieee? with
-  | some ieee => Model.roundDyadicWithRounding f.floatFormat ieee exact
-  | none => Model.SMT.roundRNA f.floatFormat exact
+  FPValue.ofModel (Model.SMT.roundDyadic f.floatFormat (mode rm) exact)
 
 def cast (src dst : FPFormat) (rm : RoundingMode) (x : FPValue src) : FPValue dst :=
   FPValue.ofModel (Model.SMT.cast src.floatFormat dst.floatFormat (mode rm) x.model)

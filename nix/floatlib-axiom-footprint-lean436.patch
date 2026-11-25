@@ -1,0 +1,53 @@
+diff --git a/FloatLib/Floats/Formats/BinaryInterchange/Format/Definition.lean b/FloatLib/Floats/Formats/BinaryInterchange/Format/Definition.lean
+--- a/FloatLib/Floats/Formats/BinaryInterchange/Format/Definition.lean
++++ b/FloatLib/Floats/Formats/BinaryInterchange/Format/Definition.lean
+@@ -127,9 +127,9 @@
+     0 < ieeeBias expWidth := by
+   have hindex : 1 ≤ expWidth - 1 := Nat.le_sub_of_add_le h
+   have hpow : 2 ≤ 2 ^ (expWidth - 1) := by
+-    simpa using Nat.pow_le_pow_right (by decide : 0 < (2 : Nat)) hindex
++    simpa only [Nat.pow_one] using Nat.pow_le_pow_right (by decide : 0 < (2 : Nat)) hindex
+   unfold ieeeBias
+-  omega
++  exact Nat.sub_pos_of_lt (Nat.lt_of_lt_of_le (by decide : 1 < 2) hpow)
+ 
+ /-- The conventional IEEE bias fits below the largest finite IEEE exponent encoding. -/
+ theorem ieeeBias_le_maxFiniteExponent (expWidth : Nat) :
+diff --git a/FloatLib/Floats/Formats/BinaryInterchange/Model/Carrier.lean b/FloatLib/Floats/Formats/BinaryInterchange/Model/Carrier.lean
+--- a/FloatLib/Floats/Formats/BinaryInterchange/Model/Carrier.lean
++++ b/FloatLib/Floats/Formats/BinaryInterchange/Model/Carrier.lean
+@@ -136,11 +136,11 @@
+ 
+ /-- The biased exponent field as a natural number. -/
+ @[inline] def expField {fmt : FloatFormat} (x : Model fmt) : Nat :=
+-  ((x.bits >>> fmt.fracWidth) &&& FloatFormat.expAllOnes fmt).toNat
++  (x.bits.toNat >>> fmt.fracWidth) &&& (FloatFormat.expAllOnes fmt).toNat
+ 
+ /-- The low `fracWidth` bits of the fraction field. -/
+ @[inline] def fracField {fmt : FloatFormat} (x : Model fmt) : Nat :=
+-  (x.bits &&& FloatFormat.fracMask fmt).toNat
++  x.bits.toNat &&& (FloatFormat.fracMask fmt).toNat
+ 
+ /-- Whether `x` has an IEEE NaN bit pattern. -/
+ @[inline] def IEEE.isNaN {fmt : FloatFormat} (x : Model fmt) : Bool :=
+diff --git a/FloatLib/Floats/Formats/BinaryInterchange/Model/Lean.lean b/FloatLib/Floats/Formats/BinaryInterchange/Model/Lean.lean
+--- a/FloatLib/Floats/Formats/BinaryInterchange/Model/Lean.lean
++++ b/FloatLib/Floats/Formats/BinaryInterchange/Model/Lean.lean
+@@ -250,7 +250,7 @@
+   unfold Float.Model.UnpackedFloat.unpackMantissa
+   rw [BitVec.extractLsb'_toNat]
+   unfold fracField FloatFormat.fracMask FloatFormat.ofWordNat FloatFormat.fracMaskNat
+-  rw [BitVec.toNat_and, BitVec.toNat_ofNat]
++  rw [BitVec.toNat_ofNat]
+   cases fmt with
+   | mk exponentWidth exponentWidthPos fractionWidth fractionWidthPos =>
+     simp only [toModelBits, FloatFormat.toModel, FloatFormat.bitWidth]
+@@ -281,7 +281,7 @@
+   rw [BitVec.extractLsb'_toNat]
+   unfold expField FloatFormat.expAllOnes FloatFormat.ofWordNat
+     FloatFormat.expAllOnesNat
+-  rw [BitVec.toNat_and, BitVec.toNat_ushiftRight, BitVec.toNat_ofNat]
++  rw [BitVec.toNat_ofNat]
+   cases fmt with
+   | mk exponentWidth exponentWidthPos fractionWidth fractionWidthPos =>
+     simp only [toModelBits, FloatFormat.toModel, FloatFormat.bitWidth]

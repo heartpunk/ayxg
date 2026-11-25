@@ -5,8 +5,13 @@ open Lake DSL
 package ayxg where
   version := v!"0.1.0"
 
--- Exact patched source is provided by the qualified Nix environment. Lake
--- fails closed outside it; no accidental upstream/unpatched fallback.
+-- FloatLib's checked-in Lake manifest still carries an older Mathlib pin;
+-- explicitly select the release matching this Lean toolchain.
+require mathlib from git
+  "https://github.com/leanprover-community/mathlib4" @ "v4.36.0"
+
+-- Exact pinned upstream source is provided by the qualified Nix environment.
+-- Lake fails closed outside it; no accidental floating dependency fallback.
 require floatlib from (run_io do
   let some source ← IO.getEnv "AYXG_FLOATLIB_SOURCE"
     | throw <| IO.userError "Run Lake through nix develop: AYXG_FLOATLIB_SOURCE missing"
